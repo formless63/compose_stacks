@@ -1,0 +1,18 @@
+services:
+  readmeabook:
+    image: ghcr.io/kikootwo/readmeabook:latest
+    container_name: readmeabook
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3030}:3030"
+    volumes:
+      - ${CONFIG_DIR:-./config}:/app/config
+      - ${CACHE_DIR:-./cache}:/app/cache
+      - ${DOWNLOADS_DIR:-./downloads}:/downloads
+      - ${MEDIA_DIR:-./media}:/media
+      - ${DB_DIR:-./pgdata}:/var/lib/postgresql/data
+      - ${REDIS_DIR:-./redis}:/var/lib/redis
+    environment:
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      PUBLIC_URL: "${PUBLIC_URL:-http://localhost:3030}"
