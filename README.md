@@ -1,10 +1,28 @@
 # compose_stacks
-Personal storage for docker compose stacks. If you use these, please check the original source for changes - my examples are current as of the most recent commit on that example.
 
-If you are new to compose, you should brush up on the basics before diving in:
-https://adamtheautomator.com/docker-compose-tutorial/
-https://docs.docker.com/compose/gettingstarted/
+A collection of personal Docker Compose stacks.
 
-Do yourself a favor and install a GUI to manage your compose stacks as well. Most of these GUIs can even be used to reference this repo directly.
-https://komo.do/    -    https://github.com/moghtech/komodo
-https://dockhand.pro/    -    https://github.com/Finsys/dockhand
+> **Note:** These examples are current as of the commit date. Always check the official documentation for the specific service you are deploying to ensure you have the latest configuration changes.
+
+## Getting Started
+
+If you are new to Docker Compose, review the basics before deploying these stacks:
+
+* [Docker Compose Getting Started](https://docs.docker.com/compose/gettingstarted/) (Official Docs)
+* [Docker Compose Tutorial](https://adamtheautomator.com/docker-compose-tutorial/) (AdamTheAutomator)
+
+## Recommended Management Tools
+
+While CLI is standard, using a GUI can simplify stack management. Many of these tools can pull directly from this repository:
+
+| Name | Website | GitHub |
+| --- | --- | --- |
+| **Komodo** | [komo.do](https://komo.do/) | [moghtech/komodo](https://github.com/moghtech/komodo) |
+| **Dockhand** | [dockhand.pro](https://dockhand.pro/) | [Finsys/dockhand](https://github.com/Finsys/dockhand) |
+
+## Usage
+
+1. Navigate to the directory of the stack you want to use.
+2. Copy `.env.example` to `.env`.
+3. Edit `.env` to match your environment variables (paths, ports, PUID/PGID).
+4. Run `docker compose up -d`.
