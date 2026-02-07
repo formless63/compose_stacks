@@ -1,0 +1,19 @@
+#This is crucial so you don't accidentally commit your passwords or 5GB of database files to GitHub if you store your configs there.
+
+# --- Security ---
+# Ignore the actual environment file containing secrets
+.env
+
+# --- Data Directories ---
+# Ignore local folders created by the container
+# Matches the default ./ paths in .env.example
+config/
+data/
+db/
+media/
+downloads/
+logs/
+
+# --- System Junk ---
+.DS_Store
+Thumbs.db
