@@ -1,0 +1,15 @@
+services:
+  storyteller:
+    image: registry.gitlab.com/storyteller-platform/storyteller:latest
+    container_name: storyteller
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8001}:8001"
+    volumes:
+      - ${DATA_DIR:-./data}:/data
+    environment:
+      # Critical Security Variable
+      STORYTELLER_SECRET_KEY: ${STORYTELLER_SECRET_KEY:?error}
+      # Configuration
+      ENABLE_WEB_READER: "${ENABLE_WEB_READER:-false}"
+      AUTH_URL: "${PUBLIC_URL}"
