@@ -1,3 +1,9 @@
+x-logging: &default-logging
+  driver: 'json-file'
+  options:
+    max-size: '10m'
+    max-file: '3'
+    
 services:
   # --------------------------------------------------------------------------------
   # Database
@@ -14,7 +20,7 @@ services:
     volumes:
       - ${DB_DATA_DIR:-./supersync/db}:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-supersync}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-supersync} -d ${POSTGRES_DB:-supersync_db}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -42,12 +48,15 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGINS: ${APP_PUBLIC_URL}
       PUBLIC_URL: ${SYNC_PUBLIC_URL}
-      # SMTP_HOST: ${SMTP_HOST}
-      # SMTP_PORT: ${SMTP_PORT}
-      # SMTP_SECURE: "${SMTP_SECURE:-false}"
-      # SMTP_USER: ${SMTP_USER}
-      # SMTP_PASS: ${SMTP_PASS}
-      # SMTP_FROM: "${SMTP_FROM:-}"
+      WEBAUTHN_RP_ID: ${HOSTNAME}
+      WEBAUTHN_RP_NAME: ${WEBAUTHN_RP_NAME:-Super Productivity Sync}
+      WEBAUTHN_ORIGIN: ${SYNC_PUBLIC_URL}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_SECURE: "${SMTP_SECURE:-false}"
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_FROM: "${SMTP_FROM:-}"
     cap_drop:
       - ALL
     security_opt:
@@ -64,7 +73,7 @@ services:
   # --------------------------------------------------------------------------------
   app:
     image: johannesjo/super-productivity:latest
-    container_name: supersync_web
+    container_name: super-productivity
     restart: unless-stopped
     logging: *default-logging
     ports:
@@ -74,8 +83,3 @@ services:
       IS_COMPRESSION_ENABLED: ${IS_COMPRESSION_ENABLED:-true}
       IS_ENCRYPTION_ENABLED: ${IS_ENCRYPTION_ENABLED:-false}
 
-x-logging: &default-logging
-  driver: 'json-file'
-  options:
-    max-size: '10m'
-    max-file: '3'
