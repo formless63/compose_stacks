@@ -1,4 +1,3 @@
-
 # Super Productivity
 
 A self-hosted stack for [Super Productivity](https://super-productivity.com/), using a github-actions-built SuperSync Docker image to enable native syncing across devices. This repo assumes you will use a reverse proxy and serve your instance with a fully qualified domain name.
@@ -12,7 +11,7 @@ A self-hosted stack for [Super Productivity](https://super-productivity.com/), u
 1. **Get the Repository**
    Clone the repository and navigate to the service directory:
 ```bash
-   git clone [https://github.com/formless63/compose_stacks.git](https://github.com/formless63/compose_stacks.git)
+   git clone https://github.com/formless63/compose_stacks.git
    cd compose_stacks/supersync
 
 ```
@@ -71,7 +70,8 @@ docker compose logs -f
 | `SUPERSYNC_DATA_DIR` | File upload storage path | `./supersync/data` | Keep on persistent storage |
 | `NODE_ENV` | Application Mode | `development` | Switch to `production` when stable |
 
-## SMTP Configuration (Optional - uncomment the lines in config.yaml)
+## SMTP Configuration (Optional)
+To enable: uncomment the SMTP section in `compose.yaml` and set these variables in `.env`.
 
 | Variable | Description | Default | Recommendation |
 | --- | --- | --- | --- |
