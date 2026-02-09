@@ -1,0 +1,81 @@
+services:
+  # --------------------------------------------------------------------------------
+  # Database
+  # --------------------------------------------------------------------------------
+  db:
+    image: postgres:15-alpine
+    container_name: supersync_db
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-supersync}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_this_password}
+      POSTGRES_DB: ${POSTGRES_DB:-supersync_db}
+    volumes:
+      - ${DB_DATA_DIR:-./supersync/db}:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-supersync}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # --------------------------------------------------------------------------------
+  # SuperSync Server
+  # Host Example: https://sp-sync.domain.com
+  # --------------------------------------------------------------------------------
+  supersync:
+    image: ghcr.io/formless63/supersync:latest
+    container_name: supersync
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "${SYNC_PORT:-1900}:1900"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ${SUPERSYNC_DATA_DIR:-./supersync/data}:/app/data
+    environment:
+      NODE_ENV: "${NODE_ENV:-development}"
+      PORT: 1900
+      DATABASE_URL: postgresql://${POSTGRES_USER:-supersync}:${POSTGRES_PASSWORD:-change_this_password}@db:5432/${POSTGRES_DB:-supersync_db}
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGINS: ${APP_PUBLIC_URL}
+      PUBLIC_URL: ${SYNC_PUBLIC_URL}
+      # SMTP_HOST: ${SMTP_HOST}
+      # SMTP_PORT: ${SMTP_PORT}
+      # SMTP_SECURE: "${SMTP_SECURE:-false}"
+      # SMTP_USER: ${SMTP_USER}
+      # SMTP_PASS: ${SMTP_PASS}
+      # SMTP_FROM: "${SMTP_FROM:-}"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:1900/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # --------------------------------------------------------------------------------
+  # Super Productivity App
+  # Host Example: https://sp.domain.com
+  # --------------------------------------------------------------------------------
+  app:
+    image: johannesjo/super-productivity:latest
+    container_name: supersync_web
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    environment:
+      SYNC_INTERVAL: ${SYNC_INTERVAL:-15}      
+      IS_COMPRESSION_ENABLED: ${IS_COMPRESSION_ENABLED:-true}
+      IS_ENCRYPTION_ENABLED: ${IS_ENCRYPTION_ENABLED:-false}
+
+x-logging: &default-logging
+  driver: 'json-file'
+  options:
+    max-size: '10m'
+    max-file: '3'
