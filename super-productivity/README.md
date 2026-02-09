@@ -32,10 +32,12 @@ nano .env
 
 ```
 
-* Update `APP_PUBLIC_URL` and `SYNC_PUBLIC_URL` to match your domain/subdomains.
+* Update `APP_PUBLIC_URL` and `SYNC_PUBLIC_URL` to match your fully qualified domain/subdomains. (eg. https://sp.yourdomain.com)
+* Set `HOSTNAME` to the base domain (ex. yourdomain.com)
 * Update `POSTGRES_PASSWORD` with a unique password for your database.
 * **Generate a Secret:** Run `openssl rand -hex 32` and paste the result into `JWT_SECRET`.
 * Set `DB_DATA_DIR` and `SUPERSYNC_DATA_DIR` to your preferred bind locations (eg. /mnt/super-productivity/...)
+* Fill out the SMTP settings. These are not optional. If you don't have one you can use most services (like Gmail with 2FA and an app password) or you can set up something with a service like purelymail.com incredibly inexpensively.
 * **Save & Exit:** Press `Ctrl+X`, then `Y`, then `Enter`.
 
 4. **Launch**
@@ -64,18 +66,13 @@ docker compose logs -f
 | `WEB_PORT` | Port for the Super Productivity App | `8080` | Change if port is in use |
 | `APP_PUBLIC_URL` | The URL of your Frontend App | `https://sp.domain.com` | Must match your browser URL for CORS to work |
 | `SYNC_PUBLIC_URL` | The URL of your Sync Server | `https://sp-sync.domain.com` | Used as your sync target |
-| `JWT_SECRET` | Encryption secret for sessions | `change_me` | **REQUIRED:** Generate a random 32-char string |
+| `HOSTNAME` | The base host URL Server | `domain.com` | Base only (no https://sub.) |
+| `JWT_SECRET` | Encryption secret for sessions | `change_me` | Generate a random 32-char string |
 | `POSTGRES_PASSWORD` | Database password | `change_this_password` | Set a strong password |
 | `DB_DATA_DIR` | Database storage path | `./supersync/db` | Keep on persistent storage |
-| `SUPERSYNC_DATA_DIR` | File upload storage path | `./supersync/data` | Keep on persistent storage |
-| `NODE_ENV` | Application Mode | `development` | Switch to `production` when stable |
-
-## SMTP Configuration (Optional)
-To enable: uncomment the SMTP section in `compose.yaml` and set these variables in `.env`.
-
-| Variable | Description | Default | Recommendation |
-| --- | --- | --- | --- |
-| `SMTP_HOST` | Mail server hostname | `[None]` | e.g., `smtp.gmail.com` |
+| `SUPERSYNC_DATA_DIR` | File upload storage path | `./supersync/data` | Map to your preferred storage |
+| `NODE_ENV` | Application Mode | `development` | Switch to `production` when appropriate |
+| `SMTP_HOST` | Mail server hostname | `[None]` | e.g., `smtp.purelymail.com` |
 | `SMTP_PORT` | Mail server port | `587` | Use `465` for SSL or `587` for TLS |
 | `SMTP_SECURE` | Use SSL/TLS connection | `false` | Set to `true` if using port 465 |
 | `SMTP_USER` | SMTP Username | `[None]` | Usually your email address |
