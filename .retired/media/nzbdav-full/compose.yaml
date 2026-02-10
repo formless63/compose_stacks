@@ -1,0 +1,186 @@
+networks:
+  media:
+    driver: bridge
+
+services:
+  # --- Core player ---
+  plex:
+    image: lscr.io/linuxserver/plex:latest
+    container_name: plex
+    network_mode: host
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+      - VERSION=docker
+      # - PLEX_CLAIM=claim-xxxx  # only needed for first-time server claim
+    devices:
+      - /dev/dri:/dev/dri  # for intel hardware transcoding
+    volumes:
+      - /home/stacks/plexstack/appdata/plex:/config
+      - /mnt:/mnt:rshared
+    tmpfs:
+      - /transcode:size=4g        # Plex transcode-to-RAM. Size is optional; defaults vary by system.
+    restart: unless-stopped
+
+  tautulli:
+    image: lscr.io/linuxserver/tautulli:latest
+    container_name: tautulli
+    networks: [media]
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+      - DOCKER_MODS=ghcr.io/themepark-dev/theme.park:tautulli
+      - TP_THEME=hotline
+    volumes:
+      - /home/stacks/plexstack/appdata/tautulli:/config
+      - /home/stacks/plexstack/appdata/plex/Library/Application Support/Plex Media Server/Logs/:/logs
+    ports:
+      - 8181:8181
+    restart: unless-stopped
+
+  overseerr:
+    image: lscr.io/linuxserver/overseerr:latest
+    container_name: overseerr
+    networks: [media]
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+      - DOCKER_MODS=ghcr.io/themepark-dev/theme.park:overseerr
+      - TP_THEME=hotline
+    volumes:
+      - /home/stacks/plexstack/appdata/overseerr:/config
+    ports:
+      - 5055:5055
+    restart: unless-stopped
+
+  # --- Indexer manager ---
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    networks: [media]
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+      - DOCKER_MODS=ghcr.io/themepark-dev/theme.park:prowlarr
+      - TP_THEME=hotline
+    volumes:
+      - /home/stacks/plexstack/appdata/prowlarr:/config
+    ports:
+      - 9696:9696
+    restart: unless-stopped
+
+  # --- Arrs (point these at NzbDav’s SAB-compatible API) ---
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    networks: [media]
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+      - DOCKER_MODS=ghcr.io/themepark-dev/theme.park:radarr
+      - TP_THEME=hotline
+    volumes:
+      - /home/stacks/plexstack/appdata/radarr:/config
+      - /mnt:/mnt:rshared
+    ports:
+      - 7878:7878
+    restart: unless-stopped
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    networks: [media]
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+      - DOCKER_MODS=ghcr.io/themepark-dev/theme.park:sonarr
+      - TP_THEME=hotline
+    volumes:
+      - /home/stacks/plexstack/appdata/sonarr:/config
+      - /mnt:/mnt:rshared
+    ports:
+      - 8989:8989
+    restart: unless-stopped
+
+  kometa:
+    image: lscr.io/linuxserver/kometa:latest
+    container_name: kometa
+    networks: [media]
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+      - KOMETA_CONFIG=/config/config.yml
+      - KOMETA_TIMES=03:00
+    volumes:
+      - /home/stacks/plexstack/appdata/kometa:/config
+    restart: unless-stopped
+
+  # --- NzbDav + rclone mount ---
+  nzbdav:
+    image: nzbdav/nzbdav:latest
+    container_name: nzbdav
+    networks: [media]
+    ports:
+      - "3000:3000"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+    volumes:
+      - /home/stacks/plexstack/appdata/nzbdav:/config
+      - /mnt:/mnt:rshared
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:3000/health || exit 1"]
+      interval: 1m
+      retries: 3
+      start_period: 10s
+      timeout: 5s
+    restart: unless-stopped
+
+  nzbdav_rclone:
+    image: rclone/rclone:latest
+    container_name: nzbdav_rclone
+    networks: [media]
+    depends_on:
+      nzbdav:
+        condition: service_healthy
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+    volumes:
+      - /mnt:/mnt:rshared
+      - /home/stacks/plexstack/rclone/rclone.conf:/config/rclone/rclone.conf:ro
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined
+    devices:
+      - /dev/fuse:/dev/fuse:rwm
+    tmpfs:
+      - /transient-cache:size=6G
+    command: >
+      mount nzbdav: /mnt/remote/nzbdav
+        --uid=1000
+        --gid=1000
+        --allow-other
+        --links
+        --use-cookies
+        --vfs-cache-mode=full
+        --cache-dir=/transient-cache 
+        --vfs-cache-max-size=5G
+        --vfs-cache-max-age=1h
+        --buffer-size=0M
+        --vfs-read-ahead=32M
+        --dir-cache-time=20s
+        --allow-non-empty
+    restart: unless-stopped
+
+
