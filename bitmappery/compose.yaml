@@ -1,3 +1,9 @@
+x-logging: &default-logging
+  driver: 'json-file'
+  options:
+    max-size: '10m'
+    max-file: '3'
+
 services:
   # --------------------------------------------------------------------------------
   # BitMappery
@@ -19,9 +25,3 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
-
-x-logging: &default-logging
-  driver: 'json-file'
-  options:
-    max-size: '10m'
-    max-file: '3'
