@@ -16,26 +16,14 @@ A self-hosted instance of [BitMappery](https://www.igorski.nl/bitmappery), a fre
 
 ```
 
-2. **Prepare Environment**
-Copy the example configuration file:
-
+2. **Edit Ports**
 ```bash
-cp .env.example .env
-
+   nano compose.yaml
 ```
-
-3. **Edit Configuration**
-(Optional) Open the configuration file if you need to change the port:
-
-```bash
-nano .env
-
-```
-
-* Update `APP_PORT` if port 8080 is already in use on your system.
+* Update if port 5173 is already in use on your system. Change `- 5173:5173` to `YourPort:5173`
 * **Save & Exit:** Press `Ctrl+X`, then `Y`, then `Enter`.
 
-4. **Launch**
+3. **Launch**
 Start the stack in detached mode:
 
 ```bash
@@ -43,7 +31,7 @@ docker compose up -d
 
 ```
 
-5. **Verify**
+4. **Verify**
 Check the logs to ensure everything started correctly:
 
 ```bash
@@ -63,6 +51,5 @@ docker compose logs -f
 
 BitMappery is a **client-side application**.
 
-* **Projects:** Saved in your browser's Local Storage (IndexedDB).
-* **Exports:** Saved as `.rle` or image files to your computer.
+* **Projects:** Saved in your browser's Local Storage.
 * **Server Data:** This container is stateless. No server-side volumes are required.
