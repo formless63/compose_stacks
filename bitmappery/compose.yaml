@@ -1,0 +1,27 @@
+services:
+  # --------------------------------------------------------------------------------
+  # BitMappery
+  # A pixel art editor that runs in the browser.
+  # --------------------------------------------------------------------------------
+  bitmappery:
+    image: ghcr.io/formless63/bitmappery:latest
+    container_name: bitmappery
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    environment:
+      # BitMappery is a static site served by http-server.
+      # It doesn't require complex environment variables.
+      NODE_ENV: production
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:8080']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+x-logging: &default-logging
+  driver: 'json-file'
+  options:
+    max-size: '10m'
+    max-file: '3'
