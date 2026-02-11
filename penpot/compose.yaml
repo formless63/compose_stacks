@@ -1,0 +1,118 @@
+# compose.yaml
+#
+# Notes:
+# - Uses :latest by default via PENPOT_VERSION, but you should pin a specific version for production stability.
+# - Assumes you are serving Penpot over HTTPS (Pangolin), so we do NOT use disable-secure-session-cookies.
+# - Assumes SMTP is available and configured (enable-smtp + SMTP env vars).
+#
+# Docs:
+# - https://help.penpot.app/technical-guide/getting-started/docker/
+# - https://help.penpot.app/technical-guide/configuration/
+
+name: penpot
+
+services:
+  penpot-frontend:
+    image: "penpotapp/frontend:${PENPOT_VERSION:-latest}"
+    restart: unless-stopped
+    ports:
+      - "${PENPOT_HTTP_PORT:-9001}:8080"
+    volumes:
+      - "${ASSETS_VOLUME:-./penpot/assets}:/opt/data/assets"
+    depends_on:
+      - penpot-backend
+      - penpot-exporter
+    networks:
+      - penpot
+    environment:
+      PENPOT_FLAGS: ${PENPOT_FLAGS}
+      PENPOT_PUBLIC_URI: ${PENPOT_PUBLIC_URI}
+      PENPOT_HTTP_SERVER_MAX_BODY_SIZE: ${PENPOT_HTTP_SERVER_MAX_BODY_SIZE}
+      PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE: ${PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE}
+
+  penpot-backend:
+    image: "penpotapp/backend:${PENPOT_VERSION:-latest}"
+    restart: unless-stopped
+    volumes:
+      - "${ASSETS_VOLUME:-./penpot/assets}:/opt/data/assets"
+    depends_on:
+      penpot-postgres:
+        condition: service_healthy
+      penpot-valkey:
+        condition: service_healthy
+    networks:
+      - penpot
+    environment:
+      PENPOT_FLAGS: ${PENPOT_FLAGS}
+      PENPOT_PUBLIC_URI: ${PENPOT_PUBLIC_URI}
+      PENPOT_SECRET_KEY: ${PENPOT_SECRET_KEY}
+      PENPOT_HTTP_SERVER_MAX_BODY_SIZE: ${PENPOT_HTTP_SERVER_MAX_BODY_SIZE}
+      PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE: ${PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE}
+      # Database
+      PENPOT_DATABASE_URI: ${PENPOT_DATABASE_URI}
+      PENPOT_DATABASE_USERNAME: ${PENPOT_DATABASE_USERNAME}
+      PENPOT_DATABASE_PASSWORD: ${PENPOT_DATABASE_PASSWORD}
+      # Valkey/Redis
+      PENPOT_REDIS_URI: ${PENPOT_REDIS_URI}
+      # Assets storage
+      PENPOT_OBJECTS_STORAGE_BACKEND: ${PENPOT_OBJECTS_STORAGE_BACKEND}
+      PENPOT_OBJECTS_STORAGE_FS_DIRECTORY: ${PENPOT_OBJECTS_STORAGE_FS_DIRECTORY}
+      # SMTP (required)
+      PENPOT_SMTP_DEFAULT_FROM: ${PENPOT_SMTP_DEFAULT_FROM}
+      PENPOT_SMTP_DEFAULT_REPLY_TO: ${PENPOT_SMTP_DEFAULT_REPLY_TO}
+      PENPOT_SMTP_HOST: ${PENPOT_SMTP_HOST}
+      PENPOT_SMTP_PORT: ${PENPOT_SMTP_PORT}
+      PENPOT_SMTP_USERNAME: ${PENPOT_SMTP_USERNAME}
+      PENPOT_SMTP_PASSWORD: ${PENPOT_SMTP_PASSWORD}
+      PENPOT_SMTP_TLS: ${PENPOT_SMTP_TLS}
+      PENPOT_SMTP_SSL: ${PENPOT_SMTP_SSL}
+
+  penpot-exporter:
+    image: "penpotapp/exporter:${PENPOT_VERSION:-latest}"
+    restart: unless-stopped
+    depends_on:
+      penpot-valkey:
+        condition: service_healthy
+    networks:
+      - penpot
+    environment:
+      PENPOT_SECRET_KEY: ${PENPOT_SECRET_KEY}
+      PENPOT_PUBLIC_URI: http://penpot-frontend:8080
+      PENPOT_REDIS_URI: ${PENPOT_REDIS_URI}
+
+  penpot-postgres:
+    image: "postgres:15"
+    restart: unless-stopped
+    stop_signal: SIGINT
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 2s
+      timeout: 10s
+      retries: 5
+      start_period: 2s
+    volumes:
+      - "${DB_VOLUME:-./penpot/postgres}:/var/lib/postgresql/data"
+    networks:
+      - penpot
+    environment:
+      POSTGRES_INITDB_ARGS: ${POSTGRES_INITDB_ARGS}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+  penpot-valkey:
+    image: "valkey/valkey:8.1"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
+      interval: 1s
+      timeout: 3s
+      retries: 5
+      start_period: 3s
+    networks:
+      - penpot
+    environment:
+      VALKEY_EXTRA_FLAGS: ${VALKEY_EXTRA_FLAGS}
+
+networks:
+  penpot:
