@@ -1,0 +1,14 @@
+.env
+.env.*
+
+# Penpot data
+penpot/
+postgres/
+assets/
+
+# Logs
+*.log
+
+# OS junk
+.DS_Store
+Thumbs.db
