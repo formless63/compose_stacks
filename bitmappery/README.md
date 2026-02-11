@@ -1,6 +1,6 @@
 # BitMappery
 
-A self-hosted instance of [BitMappery](https://bitmappery.igorski.nl/), a free, browser-based pixel art editor. It is a Progressive Web App (PWA) that works offline and saves data locally to your browser. This container is being built from the official repo via github actions within my [docker-builds repo](https://github.com/formless63/docker-builds).
+A self-hosted instance of [BitMappery](https://www.igorski.nl/bitmappery), a free, browser-based pixel art editor. It is a Progressive Web App (PWA) that works offline and saves data locally to your browser. This container is being built from the official repo via github actions within my [docker-builds repo](https://github.com/formless63/docker-builds).
 
 **Links:**
 * [GitHub: igorski/bitmappery](https://github.com/igorski/bitmappery)
@@ -57,7 +57,7 @@ docker compose logs -f
 
 | Variable | Description | Default | Recommendation |
 | --- | --- | --- | --- |
-| `APP_PORT` | Port for the web interface | `8080` | Change if port is in use |
+| `APP_PORT` | Port for the web interface | `5173` | Change if port is in use |
 
 ## Data Persistence
 
