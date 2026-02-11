@@ -20,7 +20,7 @@ A self-hosted instance of [BitMappery](https://www.igorski.nl/bitmappery), a fre
 ```bash
    nano compose.yaml
 ```
-* Update if port 5173 is already in use on your system. Change `- 5173:5173` to `YourPort:5173`
+* Update if port 5173 is already in use on your system. Change `- 5173:5173` to `- YourPort:5173`
 * **Save & Exit:** Press `Ctrl+X`, then `Y`, then `Enter`.
 
 3. **Launch**
