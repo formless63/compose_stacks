@@ -1,0 +1,76 @@
+services:
+  directus:
+    image: directus/directus:${DIRECTUS_VERSION:-latest}
+    container_name: directus
+    restart: unless-stopped
+    depends_on:
+      - directus-cache
+    environment:
+      # Core
+      KEY: ${DIRECTUS_KEY}
+      SECRET: ${DIRECTUS_SECRET}
+      PUBLIC_URL: ${DIRECTUS_PUBLIC_URL}
+
+      # Admin
+      ADMIN_EMAIL: ${DIRECTUS_ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${DIRECTUS_ADMIN_PASSWORD}
+
+      # Database (connects to existing postgres stack)
+      DB_CLIENT: ${DB_CLIENT}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_SCHEMA: ${DB_SCHEMA}
+
+      # Connection pool
+      DB_POOL_MIN: ${DB_POOL_MIN:-2} 
+      DB_POOL_MAX: ${DB_POOL_MAX:-10}
+
+      # Cache
+      CACHE_ENABLED: "true"
+      CACHE_AUTO_PURGE: "true"
+      CACHE_STORE: redis
+      REDIS: redis://directus-cache:6379
+      CACHE_SCHEMA: "true"
+
+      # Performance / noise reduction
+      TELEMETRY: "false"
+      LOG_LEVEL: "warn"
+
+    volumes:
+      - ${DIRECTUS_UPLOADS_DIR:-./uploads}:/directus/uploads
+      - ${DIRECTUS_EXTENSIONS_DIR:-./extensions}:/directus/extensions
+
+    networks:
+      - directus
+#      - db_net
+
+    healthcheck:
+      test: ["CMD", "node", "./cli.js", "healthcheck"]
+      interval: 60s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  directus-cache:
+    image: redis:${REDIS_VERSION:-latest}
+    container_name: directus-cache
+    restart: unless-stopped
+    volumes:
+      - ${REDIS_DIR:-./redis}:/data
+    networks:
+      - directus
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  directus:
+    name: directus
+    driver: bridge
+#  db_net:   # Uncomment these two lines and adjust to tie to your existing db stack
+#    external: true
