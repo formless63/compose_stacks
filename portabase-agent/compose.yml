@@ -4,7 +4,7 @@ services:
     image: portabase/agent:latest
     restart: always
     volumes:
-      - ${AGENT_DIR=-.}/databases.json:/config/config.json
+      - ${AGENT_DIR:-.}/databases.json:/config/config.json
     extra_hosts:
     # Allows the agent to contact the host's 'localhost'
       - "localhost:host-gateway"
