@@ -1,0 +1,29 @@
+name: omada
+
+services:
+  omada:
+    image: mbentley/omada-controller:${OMADA_VERSION:-6.2}
+    container_name: omada
+    restart: unless-stopped
+    stop_grace_period: 60s
+    ulimits:
+      nofile:
+        soft: 4096
+        hard: 8192
+    environment:
+      TZ: "${TZ:-Etc/UTC}"
+    ports:
+      # Discovery / adoption / management
+      - "19810:19810/udp"
+      - "27001:27001/udp"
+      - "29810:29810/udp"
+      - "29811-29817:29811-29817/tcp"
+
+      # Controller UI / captive portal. Set OMADA_BIND_IP to limit these
+      # listeners to a specific host interface (for example, a Tailscale IP).
+      - "${OMADA_BIND_IP:-0.0.0.0}:8043:8043/tcp"
+      - "${OMADA_BIND_IP:-0.0.0.0}:8088:8088/tcp"
+      - "${OMADA_BIND_IP:-0.0.0.0}:8843:8843/tcp"
+    volumes:
+      - "${DATA_DIR:-./data}:/opt/tplink/EAPController/data"
+      - "${LOGS_DIR:-./logs}:/opt/tplink/EAPController/logs"
