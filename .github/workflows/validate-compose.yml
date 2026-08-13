@@ -1,0 +1,27 @@
+name: Validate Compose templates
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate active Compose files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          while IFS= read -r file; do
+            echo "Validating ${file}"
+            docker compose -f "${file}" config --no-interpolate --quiet
+          done < <(find . -type f \( -name 'compose.yaml' -o -name 'compose.yml' \) -not -path './.retired/*' -print | sort)
