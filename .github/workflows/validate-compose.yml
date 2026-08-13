@@ -14,14 +14,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Validate active Compose files
         shell: bash
         run: |
-          set -euo pipefail
+          set -uo pipefail
+          failed=0
 
           while IFS= read -r file; do
             echo "Validating ${file}"
-            docker compose -f "${file}" config --no-interpolate --quiet
+            if ! output=$(docker compose -f "${file}" config --no-interpolate --quiet 2>&1); then
+              message=${output//$'\n'/'%0A'}
+              echo "::error file=${file}::${message}"
+              failed=1
+            fi
           done < <(find . -type f \( -name '*compose*.yaml' -o -name '*compose*.yml' \) -not -path './.retired/*' -print | sort)
+
+          exit "${failed}"
