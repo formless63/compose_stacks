@@ -29,6 +29,6 @@ jobs:
               echo "::error file=${file}::${message}"
               failed=1
             fi
-          done < <(find . -type f \( -name '*compose*.yaml' -o -name '*compose*.yml' \) -not -path './.retired/*' -print | sort)
+          done < <(find . -type f \( -name '*compose*.yaml' -o -name '*compose*.yml' \) -not -path './.retired/*' -not -path './.github/*' -print | sort)
 
           exit "${failed}"
