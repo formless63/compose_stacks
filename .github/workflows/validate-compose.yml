@@ -1,0 +1,34 @@
+name: Validate Compose templates
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Validate active Compose files
+        shell: bash
+        run: |
+          set -uo pipefail
+          failed=0
+
+          while IFS= read -r file; do
+            echo "Validating ${file}"
+            if ! output=$(docker compose -f "${file}" config --no-interpolate --quiet 2>&1); then
+              message=${output//$'\n'/'%0A'}
+              echo "::error file=${file}::${message}"
+              failed=1
+            fi
+          done < <(find . -type f \( -name '*compose*.yaml' -o -name '*compose*.yml' \) -not -path './.retired/*' -not -path './.github/*' -print | sort)
+
+          exit "${failed}"
