@@ -24,4 +24,4 @@ jobs:
           while IFS= read -r file; do
             echo "Validating ${file}"
             docker compose -f "${file}" config --no-interpolate --quiet
-          done < <(find . -type f \( -name 'compose.yaml' -o -name 'compose.yml' \) -not -path './.retired/*' -print | sort)
+          done < <(find . -type f \( -name '*compose*.yaml' -o -name '*compose*.yml' \) -not -path './.retired/*' -print | sort)
