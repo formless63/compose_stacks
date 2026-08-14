@@ -12,4 +12,4 @@ services:
       STORYTELLER_SECRET_KEY: ${STORYTELLER_SECRET_KEY:?error}
       # Configuration
       ENABLE_WEB_READER: "${ENABLE_WEB_READER:-false}"
-      AUTH_URL: "${PUBLIC_URL}"
+      AUTH_URL: "${AUTH_URL:?error}"

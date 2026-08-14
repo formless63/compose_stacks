@@ -22,11 +22,33 @@ jobs:
           set -uo pipefail
           failed=0
 
+          annotate() {
+            local file=$1 message=$2
+            message=${message//'%'/'%25'}
+            message=${message//$'\r'/'%0D'}
+            message=${message//$'\n'/'%0A'}
+            echo "::error file=${file}::${message}"
+          }
+
           while IFS= read -r file; do
             echo "Validating ${file}"
+
+            # Pass 1: schema and YAML structure. Catches undefined anchors and
+            # unknown keys without needing any variable values.
             if ! output=$(docker compose -f "${file}" config --no-interpolate --quiet 2>&1); then
-              message=${output//$'\n'/'%0A'}
-              echo "::error file=${file}::${message}"
+              annotate "${file}" "${output}"
+              failed=1
+              continue
+            fi
+
+            # Pass 2: interpolation syntax. Pass 1 skips ${...} parsing entirely,
+            # so a malformed expansion such as ${VAR=-default} survives it and then
+            # fails at deploy time. This check is value-independent: it reports only
+            # malformed expansions, and ignores unset variables and the placeholder
+            # values carried in .env.example files.
+            output=$(docker compose -f "${file}" config 2>&1 || true)
+            if grep -q 'invalid interpolation format' <<<"${output}"; then
+              annotate "${file}" "$(grep -v 'level=warning' <<<"${output}")"
               failed=1
             fi
           done < <(find . -type f \( -name '*compose*.yaml' -o -name '*compose*.yml' \) -not -path './.retired/*' -not -path './.github/*' -print | sort)
