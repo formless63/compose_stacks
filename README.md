@@ -23,6 +23,7 @@ Keep your `.env` and data when pulling updates. Read the stack's update notes be
 | Portabase agent | `portabase-agent/compose.yml` | [Setup](portabase-agent/README.md) |
 | Storyteller | `storyteller/compose.yaml` | [Setup](storyteller/README.md) |
 | ReadMeABook | `readmeabook/compose.yaml` | [Setup](readmeabook/README.md) |
+| qBittorrent + Gluetun + dashboards | `qbittorrent-gluetun/compose.yaml` | [Setup](qbittorrent-gluetun/README.md) |
 | Omada Controller | `omada/compose.yaml` | [Setup](omada/README.md) |
 
 ## Management Tools

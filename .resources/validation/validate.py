@@ -9,6 +9,7 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
 STACKS = {
+    'qbittorrent-gluetun': ('compose.yaml', '.env.example'),
     'omada': ('compose.yaml', '.env.example'),
     'bitmappery': ('compose.yaml', '.env.example'),
     'super-productivity': ('compose.yaml', '.env.example'),
@@ -21,6 +22,9 @@ STACKS = {
 }
 # Public, disposable test values; never deployment credentials.
 FIXTURES = {
+    'PROTON_KEY': 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+    'GLUETUN_PASS': 'ComposeTestOnly123',
+    'QBIT_PASS': 'ComposeTestOnly123',
     'POSTGRES_PASSWORD': 'ComposeTestOnly_123',
     'PENPOT_DATABASE_PASSWORD': 'ComposeTestOnly_123',
     'PENPOT_SECRET_KEY': 'a' * 86,
@@ -99,6 +103,20 @@ def main():
         assert changed.returncode == 0, changed.stderr
         choices = json.loads(changed.stdout)['services']
         assert all('keep-this-version' in item['image'] for item in choices.values()), f'{stack}: an image ignored .env'
+        if stack == 'qbittorrent-gluetun':
+            services = model['services']
+            assert services['qbittorrent']['network_mode'] == 'service:gluetun'
+            vpn = services['gluetun']
+            assert vpn['environment']['FIREWALL_OUTBOUND_SUBNETS'] == ''
+            assert vpn['environment']['FIREWALL_INPUT_PORTS'] == '8080,8000'
+            assert 'VPN_PORT_FORWARDING_UP_COMMAND' not in vpn['environment']
+            assert [port['target'] for port in vpn['ports']] == [8080]
+            for ui in ('gluetun-webui', 'qbit_manage'):
+                assert services[ui]['ports'][0]['host_ip'] == '127.0.0.1'
+            # Catch JSON-breaking control credentials before deployment.
+            auth = json.loads(vpn['environment']['HTTP_CONTROL_SERVER_AUTH_DEFAULT_ROLE'])
+            assert auth['password'] == declared['GLUETUN_PASS']
+            assert all(not service.get('labels') for service in services.values())
         if stack == 'portabase':
             proxy = resolve(stack, extra=('compose.proxy.yml',))
             assert proxy.returncode == 0, proxy.stderr
