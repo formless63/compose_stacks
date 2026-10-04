@@ -10,12 +10,13 @@ services:
   # --------------------------------------------------------------------------------
   db:
     image: postgres:15-alpine
-    container_name: supersync_db
+    init: true
+    stop_grace_period: 60s
     restart: unless-stopped
     logging: *default-logging
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-supersync}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_this_password}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a strong database password in .env}
       POSTGRES_DB: ${POSTGRES_DB:-supersync_db}
     volumes:
       - ${DB_DATA_DIR:-./supersync/db}:/var/lib/postgresql/data
@@ -25,32 +26,55 @@ services:
       timeout: 5s
       retries: 5
 
+  # Runs the upstream migrator once before the server starts. Re-run on each upgrade.
+  migrate:
+    image: ${SUPERSYNC_IMAGE:-ghcr.io/formless63/supersync:latest}
+    restart: "no"
+    init: true
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["sh", "scripts/migrate-deploy.sh"]
+    healthcheck:
+      disable: true
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-supersync}:${POSTGRES_PASSWORD:?Set a strong database password in .env}@db:5432/${POSTGRES_DB:-supersync_db}?connection_limit=60&pool_timeout=10
+      REQUIRE_DATABASE_POOL_LIMITS: "true"
+    logging: *default-logging
+
   # --------------------------------------------------------------------------------
   # SuperSync Server
   # Host Example: https://sp-sync.domain.com
   # --------------------------------------------------------------------------------
   supersync:
-    image: ghcr.io/formless63/supersync:latest
-    container_name: supersync
+    image: ${SUPERSYNC_IMAGE:-ghcr.io/formless63/supersync:latest}
     restart: unless-stopped
     logging: *default-logging
     ports:
       - "${SYNC_PORT:-1900}:1900"
+    init: true
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     volumes:
       - ${SUPERSYNC_DATA_DIR:-./supersync/data}:/app/data
     environment:
-      NODE_ENV: "${NODE_ENV:-development}"
+      NODE_ENV: "${NODE_ENV:-production}"
+      HOST: 0.0.0.0
       PORT: 1900
-      DATABASE_URL: postgresql://${POSTGRES_USER:-supersync}:${POSTGRES_PASSWORD:-change_this_password}@db:5432/${POSTGRES_DB:-supersync_db}
-      JWT_SECRET: ${JWT_SECRET}
-      CORS_ORIGINS: ${APP_PUBLIC_URL}
-      PUBLIC_URL: ${SYNC_PUBLIC_URL}
-      WEBAUTHN_RP_ID: ${HOSTNAME}
+      RUN_MIGRATIONS_ON_STARTUP: "false"
+      REQUIRE_DATABASE_POOL_LIMITS: "true"
+      DATABASE_URL: postgresql://${POSTGRES_USER:-supersync}:${POSTGRES_PASSWORD:?Set a strong database password in .env}@db:5432/${POSTGRES_DB:-supersync_db}?connection_limit=60&pool_timeout=10
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      SUPERSYNC_HIDE_UPSTREAM_NOTICE: "${SUPERSYNC_HIDE_UPSTREAM_NOTICE:-false}"
+      CORS_ORIGINS: ${APP_PUBLIC_URL:?Set APP_PUBLIC_URL in .env}
+      PUBLIC_URL: ${SYNC_PUBLIC_URL:?Set SYNC_PUBLIC_URL in .env}
+      WEBAUTHN_RP_ID: ${HOSTNAME:?Set HOSTNAME in .env}
       WEBAUTHN_RP_NAME: ${WEBAUTHN_RP_NAME:-Super Productivity Sync}
-      WEBAUTHN_ORIGIN: ${SYNC_PUBLIC_URL}
+      WEBAUTHN_ORIGIN: ${SYNC_PUBLIC_URL:?Set SYNC_PUBLIC_URL in .env}
       SMTP_HOST: ${SMTP_HOST}
       SMTP_PORT: ${SMTP_PORT}
       SMTP_SECURE: "${SMTP_SECURE:-false}"
@@ -66,6 +90,7 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+      start_period: 30s
 
   # --------------------------------------------------------------------------------
   # Super Productivity App
@@ -73,7 +98,6 @@ services:
   # --------------------------------------------------------------------------------
   app:
     image: johannesjo/super-productivity:latest
-    container_name: super-productivity
     restart: unless-stopped
     logging: *default-logging
     ports:

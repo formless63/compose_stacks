@@ -1,35 +1,48 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   portabase:
-    container_name: portabase
-    image: portabase/portabase:latest
+    image: ${PORTABASE_IMAGE:-portabase/portabase:latest}
     restart: always
+    logging: *default-logging
     environment:
-      - TZ=America/New_York
-      - PROJECT_NAME
-      - PROJECT_URL
-      - PROJECT_SECRET
-      - POSTGRES_DB
-      - POSTGRES_USER
-      - POSTGRES_PASSWORD
-      - POSTGRES_HOST
+      - NODE_ENV=production
+      - TZ=${TZ:-UTC}
+      - TRUSTED_DOMAINS=${PROJECT_URL:?Set PROJECT_URL in .env}
+      - PROJECT_NAME=${PROJECT_NAME:?Set PROJECT_NAME in .env}
+      - PROJECT_URL=${PROJECT_URL:?Set PROJECT_URL in .env}
+      - PROJECT_SECRET=${PROJECT_SECRET:?Set PROJECT_SECRET in .env}
+      - POSTGRES_DB=${POSTGRES_DB:?Set POSTGRES_DB in .env}
+      - POSTGRES_USER=${POSTGRES_USER:?Set POSTGRES_USER in .env}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      - POSTGRES_HOST=${POSTGRES_HOST:?Set POSTGRES_HOST in .env}
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@portabase-pg:5432/${POSTGRES_DB}?schema=public
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
     ports:
       - "${HOST_PORT}:80"
     volumes:
-      - ${DATA_DIR=-./data}:/data
+      - ${DATA_DIR:-./data}:/data
     depends_on:
       portabase-pg:
         condition: service_healthy
     networks:
       - portabase_internal
-      - newt_net
 
   portabase-pg:
-    container_name: portabase-pg
     image: postgres:17-alpine
     restart: always
+    logging: *default-logging
     volumes:
-      - ${DB_DIR=-./db}:/var/lib/postgresql/data
+      - ${DB_DIR:-./db}:/var/lib/postgresql/data
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
@@ -44,7 +57,4 @@ services:
 
 networks:
   portabase_internal:
-    name: portabase_internal
     driver: bridge
-  newt_net:
-    external: true

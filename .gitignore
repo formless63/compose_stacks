@@ -1,0 +1,19 @@
+# Local deployment configuration and persistent data
+.env
+.env.*
+!.env.example
+**/databases.json
+**/config/
+**/cache/
+**/data/
+**/db/
+**/pgdata/
+**/redis/
+**/postgres/
+**/assets/
+**/uploads/
+**/extensions/
+**/downloads/
+**/media/
+__pycache__/
+*.pyc

@@ -1,0 +1,9 @@
+# Optional connection to an existing reverse-proxy network.
+services:
+  portabase:
+    networks:
+      - newt_net
+networks:
+  newt_net:
+    external: true
+    name: ${PROXY_NETWORK:-newt_net}

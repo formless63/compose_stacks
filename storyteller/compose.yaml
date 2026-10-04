@@ -1,15 +1,21 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   storyteller:
-    image: registry.gitlab.com/storyteller-platform/storyteller:latest
-    container_name: storyteller
+    image: ${STORYTELLER_IMAGE:-registry.gitlab.com/storyteller-platform/storyteller:latest}
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "${APP_PORT:-8001}:8001"
     volumes:
       - ${DATA_DIR:-./data}:/data
     environment:
       # Critical Security Variable
-      STORYTELLER_SECRET_KEY: ${STORYTELLER_SECRET_KEY:?error}
+      STORYTELLER_SECRET_KEY: ${STORYTELLER_SECRET_KEY:?Generate a secret in .env with openssl rand -base64 32}
       # Configuration
       ENABLE_WEB_READER: "${ENABLE_WEB_READER:-false}"
-      AUTH_URL: "${PUBLIC_URL}"
+      AUTH_URL: "${AUTH_URL:?Set the full authentication URL ending in /api/v2/auth}"

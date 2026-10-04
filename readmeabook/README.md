@@ -1,64 +1,35 @@
 # ReadMeABook
 
-Fully Featured audiobook request and downloading engine to bring audiobooks up to speed with the modern automation standards.
+An audiobook request and library application using the upstream unified container.
 
-**Links:**
-* [kikootwo/readmeabook](https://github.com/kikootwo/readmeabook)
-* [Container Registry](https://github.com/kikootwo/readmeabook/pkgs/container/readmeabook)
+[Upstream documentation](https://github.com/kikootwo/readmeabook/blob/main/docker-compose.yml) · [Validation results](../VALIDATION.md)
 
+## Start
 
-## Quick Start
+Clone this repository, then run commands from `readmeabook/`.
 
-1. **Get the Repository**
-Clone the repository and navigate to the service directory:
-```bash
-git clone https://github.com/formless63/compose_stacks.git
-cd compose_stacks/readmeabook
-
-```
-
-2. **Prepare Environment**
-Copy the example configuration file:
-```bash
+```sh
 cp .env.example .env
-
-```
-
-3. **Edit Configuration**
-Open the configuration file with nano:
-```bash
-nano .env
-
-```
-
-* Update `PUBLIC_URL` and `_DIR` paths to match your system.
-* **Save & Exit:** Press `Ctrl+X`, then `Y`, then `Enter`.
-
-4. **Launch**
-Start the stack in detached mode:
-```bash
+# Edit .env; generate required secrets and configure URLs/storage.
+docker compose config --quiet
 docker compose up -d
-
+docker compose logs --tail=100
 ```
 
-5. **Verify**
-Check the logs to ensure everything started correctly:
-```bash
-docker compose logs -f
+## Configuration and compatibility
 
-```
+The upstream unified container includes PostgreSQL and Redis. All six existing persistence mappings are retained: config, cache, downloads, media, PostgreSQL and Redis. Its `/api/health` endpoint is checked after a 60-second startup allowance.
 
-*(Press `Ctrl+C` to exit logs)*
+Set `PUID` / `PGID` to match your host permissions. PostgreSQL retains UID 103 while using the selected group; application/Redis files use your selected UID/GID. LXC setups must account for UID 103. Do not recursively change PostgreSQL data ownership to `PUID`.
 
-## Configuration
+Set `PUBLIC_URL` to the URL users actually open, without a trailing slash. It is needed for Plex/OIDC callbacks. If you change `APP_PORT` for local use, update the port in `PUBLIC_URL` too. Complete the first-run setup wizard after launch.
 
-| Variable | Description | Default | Recommendation |
-| --- | --- | --- | --- |
-| `APP_PORT` | Port for the web interface | `3030` | Change if port is already in use |
-| `PUID` / `PGID` | User and Group ID for file permissions | `1000` | Set to your host user ID (run `id $USER`) |
-| `PUBLIC_URL` | The URL used to access the site | `http://localhost:3030` | Set to your actual domain (e.g., `https://audio.example.com`). **Must be a full URL**, not a filepath. |
-| `MEDIA_DIR` | Directory containing your audiobooks | `./media` | Use absolute path (e.g., `/mnt/media/audiobooks`) |
-| `DOWNLOADS_DIR` | Directory for download client | `./downloads` | Map to your existing downloads folder |
-| `CONFIG_DIR` | Application configuration data | `./config` | Use persistent path (e.g., `/mnt/storage/readmeabook/config`) |
-| `DB_DIR` | Database storage | `./pgdata` | Use persistent path (e.g., `/mnt/storage/readmeabook/db`) |
-| `REDIS_DIR` | Redis storage | `./redis` | Use persistent path (e.g., `/mnt/storage/readmeabook/redis`) |
+The downloader and this container must see downloaded files at the same container paths. Keep `/downloads` consistent across both services. `READMEABOOK_IMAGE` can select a version or digest.
+
+Back up configuration (including automatically generated secrets), PostgreSQL data and media. Read upstream upgrade notes before pulling a new unified image; bundled database changes may require migration. A startup health check does not verify Plex, OIDC, indexers or download clients.
+
+## Maintenance
+
+Back up persistent data before an upgrade. Choose a tested image tag or digest, consult upstream migration notes, then pull and recreate the stack. Keep the previous image reference and a restorable backup; database migrations can make a simple image rollback unsafe.
+
+Fixed container names have been removed so separate Compose projects can coexist. Scripts using old container names should use `docker compose exec SERVICE` instead. Existing bind-mount paths are retained.

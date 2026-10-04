@@ -1,27 +1,36 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   directus:
     image: directus/directus:${DIRECTUS_VERSION:-latest}
-    container_name: directus
     restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "${DIRECTUS_PORT:-8055}:8055"
     depends_on:
-      - directus-cache
+      directus-cache:
+        condition: service_healthy
     environment:
       # Core
       KEY: ${DIRECTUS_KEY}
-      SECRET: ${DIRECTUS_SECRET}
-      PUBLIC_URL: ${DIRECTUS_PUBLIC_URL}
+      SECRET: ${DIRECTUS_SECRET:?Set DIRECTUS_SECRET in .env}
+      PUBLIC_URL: ${DIRECTUS_PUBLIC_URL:?Set DIRECTUS_PUBLIC_URL in .env}
 
       # Admin
       ADMIN_EMAIL: ${DIRECTUS_ADMIN_EMAIL}
-      ADMIN_PASSWORD: ${DIRECTUS_ADMIN_PASSWORD}
+      ADMIN_PASSWORD: ${DIRECTUS_ADMIN_PASSWORD:?Set the initial administrator password in .env}
 
       # Database (connects to existing postgres stack)
       DB_CLIENT: ${DB_CLIENT}
-      DB_HOST: ${DB_HOST}
+      DB_HOST: ${DB_HOST:?Set DB_HOST in .env}
       DB_PORT: ${DB_PORT}
-      DB_DATABASE: ${DB_DATABASE}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE:?Set DB_DATABASE in .env}
+      DB_USER: ${DB_USER:?Set DB_USER in .env}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
       DB_SCHEMA: ${DB_SCHEMA}
 
       # Connection pool
@@ -48,16 +57,16 @@ services:
 #      - db_net
 
     healthcheck:
-      test: ["CMD", "node", "./cli.js", "healthcheck"]
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8055/server/ping').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
       interval: 60s
       timeout: 5s
       retries: 12
       start_period: 30s
 
   directus-cache:
-    image: redis:${REDIS_VERSION:-latest}
-    container_name: directus-cache
+    image: redis:${REDIS_VERSION:-8-alpine}
     restart: unless-stopped
+    logging: *default-logging
     volumes:
       - ${REDIS_DIR:-./redis}:/data
     networks:
@@ -70,7 +79,6 @@ services:
 
 networks:
   directus:
-    name: directus
     driver: bridge
 #  db_net:   # Uncomment these two lines and adjust to tie to your existing db stack
 #    external: true

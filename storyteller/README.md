@@ -1,65 +1,33 @@
 # Storyteller
 
-A self-hosted platform for syncing and playing audiobooks with guided narration (epubs/audio).
+A self-hosted platform for ebooks and audiobooks with synchronized narration.
 
-**Links:**
-* [Official Documentation](https://storyteller-platform.gitlab.io/storyteller/docs/installation/self-hosting)
-* [GitLab Repository](https://gitlab.com/storyteller-platform/storyteller)
+[Upstream documentation](https://storyteller-platform.dev/docs/installation/self-hosting/) · [Validation results](../VALIDATION.md)
 
-## Quick Start
+## Start
 
-1. **Get the Repository**
-   Clone the repository and navigate to the service directory:
-```bash
-   git clone https://github.com/formless63/compose_stacks.git
-   cd compose_stacks/storyteller
+Clone this repository, then run commands from `storyteller/`.
 
-```
-
-2. **Prepare Environment**
-Copy the example configuration file:
-```bash
+```sh
 cp .env.example .env
-
-```
-
-
-3. **Generate Secret Key (Required)**
-Storyteller will not start without a secure unique key. Run this command and paste the output into your `.env` file:
-```bash
-openssl rand -base64 32
-
-```
-
-
-4. **Edit Configuration**
-Open the configuration file:
-```bash
-nano .env
-
-```
-
-
-* Paste your generated `STORYTELLER_SECRET_KEY`.
-* Update `DATA_DIR` to your book library location.
-* **Save & Exit:** `Ctrl+X`, `Y`, `Enter`.
-
-
-5. **Launch**
-Start the stack:
-```bash
+# Edit .env; generate required secrets and configure URLs/storage.
+docker compose config --quiet
 docker compose up -d
-
+docker compose logs --tail=100
 ```
 
+## Configuration and compatibility
 
+Generate `STORYTELLER_SECRET_KEY` with `openssl rand -base64 32`. Set `AUTH_URL` to the public authentication endpoint, including `/api/v2/auth`, for example `https://books.example.com/api/v2/auth`. The Compose file now uses the same variable as the environment example.
 
-## Configuration
+The app is published on `APP_PORT` (8001 by default). `ENABLE_WEB_READER` is configurable. `STORYTELLER_IMAGE` can select a release or immutable digest; the default retains the existing upstream image.
 
-| Variable | Description | Default | Recommendation |
-| --- | --- | --- | --- |
-| `APP_PORT` | Web Interface Port | `8001` | Change if in use |
-| `STORYTELLER_SECRET_KEY` | **Required** Encryption Key | `N/A` | Must be generated manually |
-| `ENABLE_WEB_READER` | Web-based playback | `false` | Set to `true` to try the beta player |
-| `PUBLIC_URL` | External URL | `http://localhost:8001` | Required if using OAuth features |
-| `DATA_DIR` | Library Storage | `./data` | Map to your media folder (e.g. `/mnt/media/books`) |
+`DATA_DIR` keeps the existing `/data` mapping. Keep its database, books and generated files together in backups, and retain the secret. Ensure the image's runtime user can write this directory. Do not add a guessed UID override: check the image version's upstream instructions.
+
+Read upstream release notes before updating. OAuth configuration and narration/import behavior require a real provider and representative media; a basic startup check does not cover those integrations.
+
+## Maintenance
+
+Back up persistent data before an upgrade. Choose a tested image tag or digest, consult upstream migration notes, then pull and recreate the stack. Keep the previous image reference and a restorable backup; database migrations can make a simple image rollback unsafe.
+
+Fixed container names have been removed so separate Compose projects can coexist. Scripts using old container names should use `docker compose exec SERVICE` instead. Existing bind-mount paths are retained.

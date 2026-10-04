@@ -1,55 +1,27 @@
 # BitMappery
 
-A self-hosted instance of [BitMappery](https://www.igorski.nl/bitmappery), a free, browser-based pixel art editor. It is a Progressive Web App (PWA) that works offline and saves data locally to your browser. This container is being built from the official repo via github actions within my [docker-builds repo](https://github.com/formless63/docker-builds).
+A browser image editor served as a production static site by nginx.
 
-**Links:**
-* [GitHub: igorski/bitmappery](https://github.com/igorski/bitmappery)
-* [Container Registry: ghcr.io/formless63/bitmappery](https://github.com/formless63/docker-builds/pkgs/container/bitmappery)
+[Upstream documentation](https://github.com/igorski/bitmappery) · [Validation results](../VALIDATION.md)
 
-## Quick Start
+## Start
 
-1. **Get the Repository**
-   Clone the repository and navigate to the service directory:
-```bash
-   git clone https://github.com/formless63/compose_stacks.git
-   cd compose_stacks/bitmappery
+Clone this repository, then run commands from `bitmappery/`.
 
-```
-
-2. **Edit Ports**
-```bash
-   nano compose.yaml
-```
-* Update if port 5173 is already in use on your system. Change `- 5173:5173` to `- YourPort:5173`
-* **Save & Exit:** Press `Ctrl+X`, then `Y`, then `Enter`.
-
-3. **Launch**
-Start the stack in detached mode:
-
-```bash
+```sh
+cp .env.example .env
+# Edit .env; generate required secrets and configure URLs/storage.
+docker compose config --quiet
 docker compose up -d
-
+docker compose logs --tail=100
 ```
 
-4. **Verify**
-Check the logs to ensure everything started correctly:
+## Configuration and compatibility
 
-```bash
-docker compose logs -f
+Open `http://localhost:5173` (or your chosen `APP_PORT`). No persistent container storage is required; save your work from the browser. The new production image retains container port 5173. `BITMAPPERY_IMAGE` can select a dated tag or digest from the community build repository.
 
-```
+## Maintenance
 
-*(Press `Ctrl+C` to exit logs)*
+Back up persistent data before an upgrade. Choose a tested image tag or digest, consult upstream migration notes, then pull and recreate the stack. Keep the previous image reference and a restorable backup; database migrations can make a simple image rollback unsafe.
 
-## Configuration
-
-| Variable | Description | Default | Recommendation |
-| --- | --- | --- | --- |
-| `APP_PORT` | Port for the web interface | `5173` | Change if port is in use |
-
-## Data Persistence
-
-BitMappery is a **client-side application**.
-
-* **Projects:** Saved in your browser's Local Storage.
-* **Server Data:** This container is stateless. No server-side volumes are required.
+Fixed container names have been removed so separate Compose projects can coexist. Scripts using old container names should use `docker compose exec SERVICE` instead. Existing bind-mount paths are retained.

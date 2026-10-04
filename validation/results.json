@@ -1,0 +1,210 @@
+{
+  "date": "2026-10-04",
+  "architecture": "linux/amd64",
+  "results": [
+    {
+      "stack": "bitmappery",
+      "result": "passed",
+      "images": [
+        {
+          "service": "bitmappery",
+          "image": "local/build-smoke:bitmappery",
+          "id": "sha256:35ddd667c7238b661b3b608fcf1d98ae88ec8eac711cd2d30b2b85bf1d0ff174",
+          "digests": [],
+          "upstream_source": "https://github.com/igorski/bitmappery/commit/93d5bdb9696607e72185b1003f3d160def58f3dd",
+          "local_adaptation": "Built from companion docker-builds definition with session CA trust for dependency downloads."
+        }
+      ]
+    },
+    {
+      "stack": "super-productivity",
+      "result": "passed",
+      "images": [
+        {
+          "service": "app",
+          "image": "johannesjo/super-productivity:latest",
+          "id": "sha256:f2abd0ef31a7558870c30eda9cbebcb8f27da4d8d7161b7f244fd4f2912527e4",
+          "digests": [
+            "johannesjo/super-productivity@sha256:6177a56563e855ad613782860955c61ed256afb68e1d0bfdaa4df98aad77c9e4"
+          ]
+        },
+        {
+          "service": "db",
+          "image": "postgres:15-alpine",
+          "id": "sha256:319d040b5d68e3e5b98a238f0b5d375b4b4d9c5b3a6a9afb0308a8bcf0de72a5",
+          "digests": [
+            "postgres@sha256:f7d23353e1b15400d22ebe31189f4d314b87a4c129cc400c8c2d8d4ca127bf81"
+          ]
+        },
+        {
+          "service": "migrate",
+          "image": "local/build-smoke:supersync",
+          "id": "sha256:012f88b9375a142445d5435573078c1a991b84054a1ec8a7106175520d1fec2d",
+          "digests": [],
+          "upstream_source": "https://github.com/super-productivity/super-productivity/commit/ab46b6a0cf874093be7ea73960b06dac9cee8dbc",
+          "image_input_revision": "86f5349b314014e96157bb2792660f2810a28ea5",
+          "local_adaptation": "Companion build: upstream Dockerfile plus notice; adjacent builder RUN commands combined for cloud VFS storage; session CA trust retained."
+        },
+        {
+          "service": "supersync",
+          "image": "local/build-smoke:supersync",
+          "id": "sha256:012f88b9375a142445d5435573078c1a991b84054a1ec8a7106175520d1fec2d",
+          "digests": [],
+          "upstream_source": "https://github.com/super-productivity/super-productivity/commit/ab46b6a0cf874093be7ea73960b06dac9cee8dbc",
+          "image_input_revision": "86f5349b314014e96157bb2792660f2810a28ea5",
+          "local_adaptation": "Companion build: upstream Dockerfile plus notice; adjacent builder RUN commands combined for cloud VFS storage; session CA trust retained."
+        }
+      ]
+    },
+    {
+      "stack": "penpot",
+      "result": "passed",
+      "images": [
+        {
+          "service": "penpot-admin-console",
+          "image": "local/compose-test:penpot-admin-console",
+          "id": "sha256:9b635794113db240e38aeb2fbc8e5c34596866141dfd5a0b0b859a9b4053b578",
+          "digests": [],
+          "upstream_source": "penpotapp/admin-console@sha256:5935b5adbf33eb7abaabfab657fe8f5d465cac08e62e340f932ddb35ce0f311f",
+          "local_adaptation": "Flattened upstream filesystem with restored runtime configuration to fit the cloud VFS storage driver; Compose health checks retained."
+        },
+        {
+          "service": "penpot-backend",
+          "image": "local/compose-test:penpot-backend",
+          "id": "sha256:b83fd68c2e23b5de29649873abae1574469073b3e131f54ca66f63ce460b5d37",
+          "digests": [],
+          "upstream_source": "penpotapp/backend@sha256:3b7df71db88d7c478b6a10103acb4108fa86a17a47277de81437de3899959e9e",
+          "local_adaptation": "Flattened upstream filesystem with restored runtime configuration to fit the cloud VFS storage driver; Compose health checks retained."
+        },
+        {
+          "service": "penpot-exporter",
+          "image": "local/compose-test:penpot-exporter",
+          "id": "sha256:ffdb764c152baefdcecc6059136a3a3002cd38b801e9aec027d4143468af2a35",
+          "digests": [],
+          "upstream_source": "penpotapp/exporter@sha256:3b6f9d808c777908e4f4e290e91458ec747678a7994e39125e4f3af4ef70ba9f",
+          "local_adaptation": "Flattened upstream filesystem with restored runtime configuration to fit the cloud VFS storage driver; Compose health checks retained."
+        },
+        {
+          "service": "penpot-frontend",
+          "image": "local/compose-test:penpot-frontend",
+          "id": "sha256:2ff56a52334f711b3838670bd8babdbc6e6358f460d2724e20ebc6f5e8106c6a",
+          "digests": [],
+          "upstream_source": "penpotapp/frontend@sha256:e1eb4756ec175eb71390f9bf0ddee819468d72f67f12cf3b1532bee8d591217e",
+          "local_adaptation": "Flattened upstream filesystem with restored runtime configuration to fit the cloud VFS storage driver; Compose health checks retained."
+        },
+        {
+          "service": "penpot-mcp",
+          "image": "local/compose-test:penpot-mcp",
+          "id": "sha256:230abc47854e47151fac5830d06cd839bdbb2200db01dd3774a5c602eb7bc914",
+          "digests": [],
+          "upstream_source": "penpotapp/mcp@sha256:710505af665da0e37bd6c0d420100b62ce8a712f6050f01c3670ab11bc663e96",
+          "local_adaptation": "Flattened upstream filesystem with restored runtime configuration to fit the cloud VFS storage driver; Compose health checks retained."
+        },
+        {
+          "service": "penpot-postgres",
+          "image": "postgres:15",
+          "id": "sha256:afdbd967cf653afc901851ccf14bc5a2f310748303577963e99dd117c1554527",
+          "digests": [
+            "postgres@sha256:724292da1f2e50bdccfc3302ce75bbba7f4a6076701b588cc795fcac65683550"
+          ]
+        },
+        {
+          "service": "penpot-valkey",
+          "image": "valkey/valkey:8.1",
+          "id": "sha256:2a9928a7ce4e0e57fd0cc5b35ffe1f3cbc3c028db902461fbee4e2b6c6b1f375",
+          "digests": [
+            "valkey/valkey@sha256:640c5e62cea04b6d6f2084232651d0cc70362d31f4f805e7be94dbed6855e8f2"
+          ]
+        },
+        {
+          "service": "smoke-mail",
+          "image": "sj26/mailcatcher:latest",
+          "id": "sha256:69caf15171a21d804e0791a424015f0e46fb3a134179fb85e36e2a7d1ca32d68",
+          "digests": [
+            "sj26/mailcatcher@sha256:572048324658d2198e0a96785cca4f0260f2c4cadb2cb057bd837b9ee0c60533"
+          ]
+        }
+      ]
+    },
+    {
+      "stack": "directus",
+      "result": "passed",
+      "images": [
+        {
+          "service": "directus",
+          "image": "local/compose-test:directus",
+          "id": "sha256:d4787783d4942e2821d547d9225ca14788408a3c2310b0b8d6f80aab303ce014",
+          "digests": [],
+          "upstream_source": "directus/directus@sha256:9cc8ab88e6f1fc98d860416d89d53dd15838860c315a66c6d8ee68cb72f6b3a6",
+          "local_adaptation": "Flattened upstream filesystem with restored runtime configuration to fit the cloud VFS storage driver; Compose health checks retained."
+        },
+        {
+          "service": "directus-cache",
+          "image": "redis:8-alpine",
+          "id": "sha256:15f5a4aad4c3ba34b9874ddbc7f755b469dbd7b8a9e88c12690c52ef6c72465c",
+          "digests": [
+            "redis@sha256:3811787313eba226a2ef38658c6ccb91cd5e110edc89c37767de373120a0e5a0"
+          ]
+        },
+        {
+          "service": "smoke-db",
+          "image": "postgres:15-alpine",
+          "id": "sha256:319d040b5d68e3e5b98a238f0b5d375b4b4d9c5b3a6a9afb0308a8bcf0de72a5",
+          "digests": [
+            "postgres@sha256:f7d23353e1b15400d22ebe31189f4d314b87a4c129cc400c8c2d8d4ca127bf81"
+          ]
+        }
+      ]
+    },
+    {
+      "stack": "portabase",
+      "result": "passed",
+      "images": [
+        {
+          "service": "portabase",
+          "image": "local/compose-test:portabase",
+          "id": "sha256:4626546356d3e63b07fbbece6372941fd775a0ddabc0a770a4f44221d3f855e3",
+          "digests": [],
+          "upstream_source": "portabase/portabase@sha256:a9678f03c05b1e0c29e89c866e88926131e6b0b2527332eb0e596e65933324fc",
+          "local_adaptation": "Flattened upstream filesystem with restored runtime configuration to fit the cloud VFS storage driver; Compose health checks retained."
+        },
+        {
+          "service": "portabase-pg",
+          "image": "postgres:17-alpine",
+          "id": "sha256:79bd7c99e923138f136f8009d6bffa66e21e9d4fda5c0c561b00fc9c90cfe537",
+          "digests": [
+            "postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24"
+          ]
+        }
+      ]
+    },
+    {
+      "stack": "storyteller",
+      "result": "passed",
+      "images": [
+        {
+          "service": "storyteller",
+          "image": "local/compose-test:storyteller",
+          "id": "sha256:9d06a3edc3ff31bc5e7a7be35b9e75043cb42ffe7ec2dff619c4f51683430e4a",
+          "digests": [],
+          "upstream_source": "registry.gitlab.com/storyteller-platform/storyteller@sha256:1ae16005572519f56abac2d65ab879d20115cd257fde7e89cf739ea82aed4de3",
+          "local_adaptation": "Flattened upstream filesystem with restored runtime configuration to fit the cloud VFS storage driver; Compose health checks retained."
+        }
+      ]
+    },
+    {
+      "stack": "readmeabook",
+      "result": "passed",
+      "images": [
+        {
+          "service": "readmeabook",
+          "image": "local/compose-test:readmeabook",
+          "id": "sha256:fa773c16838f2c201916c2e32c9bd701090f4195dd757b26a345e005c45b9faa",
+          "digests": [],
+          "upstream_source": "ghcr.io/kikootwo/readmeabook@sha256:a769c582af85cadb8b048ebd1069ee1946b4ff1930ba8da2978c9fef6fc29638",
+          "local_adaptation": "Flattened upstream filesystem with restored runtime configuration to fit the cloud VFS storage driver; Compose health checks retained."
+        }
+      ]
+    }
+  ]
+}

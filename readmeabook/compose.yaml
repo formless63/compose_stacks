@@ -1,8 +1,14 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   readmeabook:
-    image: ghcr.io/kikootwo/readmeabook:latest
-    container_name: readmeabook
+    image: ${READMEABOOK_IMAGE:-ghcr.io/kikootwo/readmeabook:latest}
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "${APP_PORT:-3030}:3030"
     volumes:
@@ -16,3 +22,9 @@ services:
       PUID: ${PUID:-1000}
       PGID: ${PGID:-1000}
       PUBLIC_URL: "${PUBLIC_URL:-http://localhost:3030}"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3030/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s

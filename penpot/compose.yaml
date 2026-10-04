@@ -1,7 +1,13 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 # compose.yaml
 #
 # Notes:
-# - Uses :latest by default via PENPOT_VERSION, but you should pin a specific version for production stability.
+# - Pins matching Penpot 2.18.1 images; change PENPOT_VERSION to upgrade them together.
 # - Assumes you are serving Penpot over HTTPS (Pangolin), so we do NOT use disable-secure-session-cookies.
 # - Assumes SMTP is available and configured (enable-smtp + SMTP env vars).
 #
@@ -13,8 +19,9 @@ name: penpot
 
 services:
   penpot-frontend:
-    image: "penpotapp/frontend:${PENPOT_VERSION:-latest}"
+    image: "penpotapp/frontend:${PENPOT_VERSION:-2.18.1}"
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "${PENPOT_HTTP_PORT:-9001}:8080"
     volumes:
@@ -22,17 +29,21 @@ services:
     depends_on:
       - penpot-backend
       - penpot-exporter
+      - penpot-admin-console
+      - penpot-mcp
     networks:
       - penpot
     environment:
+      PENPOT_ADMIN_CONSOLE_URI: http://penpot-admin-console:3000
       PENPOT_FLAGS: ${PENPOT_FLAGS}
-      PENPOT_PUBLIC_URI: ${PENPOT_PUBLIC_URI}
+      PENPOT_PUBLIC_URI: ${PENPOT_PUBLIC_URI:?Set PENPOT_PUBLIC_URI in .env}
       PENPOT_HTTP_SERVER_MAX_BODY_SIZE: ${PENPOT_HTTP_SERVER_MAX_BODY_SIZE}
       PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE: ${PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE}
 
   penpot-backend:
-    image: "penpotapp/backend:${PENPOT_VERSION:-latest}"
+    image: "penpotapp/backend:${PENPOT_VERSION:-2.18.1}"
     restart: unless-stopped
+    logging: *default-logging
     volumes:
       - "${ASSETS_VOLUME:-./penpot/assets}:/opt/data/assets"
     depends_on:
@@ -43,15 +54,16 @@ services:
     networks:
       - penpot
     environment:
+      PENPOT_ADMIN_CONSOLE_URI: http://penpot-admin-console:3000
       PENPOT_FLAGS: ${PENPOT_FLAGS}
-      PENPOT_PUBLIC_URI: ${PENPOT_PUBLIC_URI}
-      PENPOT_SECRET_KEY: ${PENPOT_SECRET_KEY}
+      PENPOT_PUBLIC_URI: ${PENPOT_PUBLIC_URI:?Set PENPOT_PUBLIC_URI in .env}
+      PENPOT_SECRET_KEY: ${PENPOT_SECRET_KEY:?Set PENPOT_SECRET_KEY in .env}
       PENPOT_HTTP_SERVER_MAX_BODY_SIZE: ${PENPOT_HTTP_SERVER_MAX_BODY_SIZE}
       PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE: ${PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE}
       # Database
       PENPOT_DATABASE_URI: ${PENPOT_DATABASE_URI}
       PENPOT_DATABASE_USERNAME: ${PENPOT_DATABASE_USERNAME}
-      PENPOT_DATABASE_PASSWORD: ${PENPOT_DATABASE_PASSWORD}
+      PENPOT_DATABASE_PASSWORD: ${PENPOT_DATABASE_PASSWORD:?Set PENPOT_DATABASE_PASSWORD in .env}
       # Valkey/Redis
       PENPOT_REDIS_URI: ${PENPOT_REDIS_URI}
       # Assets storage
@@ -67,22 +79,48 @@ services:
       PENPOT_SMTP_TLS: ${PENPOT_SMTP_TLS}
       PENPOT_SMTP_SSL: ${PENPOT_SMTP_SSL}
 
-  penpot-exporter:
-    image: "penpotapp/exporter:${PENPOT_VERSION:-latest}"
+  penpot-admin-console:
+    image: "penpotapp/admin-console:${PENPOT_VERSION:-2.18.1}"
     restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      penpot-postgres:
+        condition: service_healthy
+    networks: [penpot]
+    environment:
+      PENPOT_PUBLIC_URI: ${PENPOT_PUBLIC_URI:?Set PENPOT_PUBLIC_URI in .env}
+      PENPOT_SECRET_KEY: ${PENPOT_SECRET_KEY:?Set PENPOT_SECRET_KEY in .env}
+      PENPOT_DATABASE_URI: ${PENPOT_DATABASE_URI}
+      PENPOT_DATABASE_USERNAME: ${PENPOT_DATABASE_USERNAME}
+      PENPOT_DATABASE_PASSWORD: ${PENPOT_DATABASE_PASSWORD:?Set PENPOT_DATABASE_PASSWORD in .env}
+      PENPOT_INTERNAL_URI: http://penpot-frontend:8080
+
+  penpot-mcp:
+    image: "penpotapp/mcp:${PENPOT_VERSION:-2.18.1}"
+    restart: unless-stopped
+    logging: *default-logging
+    networks: [penpot]
+
+  penpot-exporter:
+    image: "penpotapp/exporter:${PENPOT_VERSION:-2.18.1}"
+    restart: unless-stopped
+    logging: *default-logging
     depends_on:
       penpot-valkey:
         condition: service_healthy
     networks:
       - penpot
     environment:
-      PENPOT_SECRET_KEY: ${PENPOT_SECRET_KEY}
-      PENPOT_PUBLIC_URI: http://penpot-frontend:8080
+      PENPOT_SECRET_KEY: ${PENPOT_SECRET_KEY:?Set PENPOT_SECRET_KEY in .env}
+      PENPOT_PUBLIC_URI: ${PENPOT_PUBLIC_URI:?Set PENPOT_PUBLIC_URI in .env}
+      PENPOT_INTERNAL_URI: http://penpot-frontend:8080
+      PENPOT_FLAGS: ${PENPOT_FLAGS}
       PENPOT_REDIS_URI: ${PENPOT_REDIS_URI}
 
   penpot-postgres:
     image: "postgres:15"
     restart: unless-stopped
+    logging: *default-logging
     stop_signal: SIGINT
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
@@ -98,11 +136,12 @@ services:
       POSTGRES_INITDB_ARGS: ${POSTGRES_INITDB_ARGS}
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
 
   penpot-valkey:
     image: "valkey/valkey:8.1"
     restart: unless-stopped
+    logging: *default-logging
     healthcheck:
       test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
       interval: 1s

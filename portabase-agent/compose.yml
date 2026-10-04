@@ -1,19 +1,30 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   portabase-agent:
-    container_name: portabase-agent
-    image: portabase/agent:latest
+    image: ${AGENT_IMAGE:-portabase/agent:latest}
     restart: always
+    logging: *default-logging
     volumes:
-      - ${AGENT_DIR:-.}/databases.json:/config/config.json
+      - type: bind
+        source: ${AGENT_DIR:-.}/databases.json
+        target: /config/config.json
+        bind:
+          create_host_path: false
     extra_hosts:
-    # Allows the agent to contact the host's 'localhost'
-      - "localhost:host-gateway"
+    # Use host.docker.internal for services listening on a reachable host address.
+      - "host.docker.internal:host-gateway"
     environment:
-      TZ: "${TZ}"
-      POLLING: 5
+      TZ: "${TZ:-UTC}"
+      # Upstream names this variable POOLING; keep POLLING as our .env setting.
+      POOLING: ${POLLING:-5}
       APP_ENV: production
       LOG: info
-      EDGE_KEY: "${EDGE_KEY}"
+      EDGE_KEY: "${EDGE_KEY:?Paste the dashboard agent key in .env}"
     networks:
       - service1_net
       - service2_net
@@ -21,5 +32,7 @@ services:
 networks:
   service1_net:
     external: true
+    name: ${DATABASE_NETWORK_1:-service1_net}
   service2_net:
     external: true
+    name: ${DATABASE_NETWORK_2:-service2_net}

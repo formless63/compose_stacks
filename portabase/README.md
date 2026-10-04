@@ -1,70 +1,39 @@
-# portabase
+# Portabase
 
-Portabase is the 100% open source and self-hosted solution to centralize, secure, and automate your database backups.
+A database backup dashboard with its own PostgreSQL database.
 
-**Links:**
-* [Portabase/portabase](https://github.com/Portabase/portabase)
-* [Docker Hub / Container Registry](https://hub.docker.com/r/portabase/portabase)
+[Upstream documentation](https://portabase.io/docs/dashboard/setup) · [Validation results](../VALIDATION.md)
 
-## Quick Start
+## Start
 
-1. **Get the Repository**
-   Clone the repository and navigate to the service directory:
-```bash
-   git clone https://github.com/formless63/compose_stacks.git
-   cd compose_stacks/portabase
-```
+Clone this repository, then run commands from `portabase/`.
 
-2. **Prepare Environment**
-Copy the example configuration file:
-```bash
+```sh
 cp .env.example .env
-```
-
-
-3. **Pre-requisites**
-Ensure external Docker networks exists before starting the stack - this example uses newt_net assuming a Pangolin environment. Comment out the newt_net blocks if not using.
-
-
-4. **Edit Configuration**
-Open the configuration file:
-```bash
-nano .env
-```
-
-
-* Generate a strong `PROJECT_SECRET` (e.g., run `openssl rand -hex 32` in your terminal).
-* Update `HOST_PORT` with a valid port or IP/Port binding.
-* Provide a secure `POSTGRES_PASSWORD`.
-
-
-5. **Launch**
-Start the stack in detached mode:
-```bash
+# Edit .env; generate required secrets and configure URLs/storage.
+docker compose config --quiet
 docker compose up -d
+docker compose logs --tail=100
 ```
 
+## Configuration and compatibility
 
-6. **Verify**
-Check the logs to ensure everything started correctly and the database is healthy:
-```bash
-docker compose logs -f
+Set `PROJECT_NAME`, `PROJECT_URL`, `PROJECT_SECRET` (`openssl rand -hex 32`), and PostgreSQL credentials. `POSTGRES_HOST=portabase-pg` points to the bundled database. URL-encode reserved characters in the database password. `PROJECT_URL` also supplies the trusted application origin.
+
+`HOST_PORT=8887` is ready for a normal Docker host. To restrict exposure, use `127.0.0.1:8887` or a real host interface address. Complete the upstream onboarding screen after first launch.
+
+The normal stack needs no pre-existing proxy network. If your reverse proxy uses an external network, set `PROXY_NETWORK` (default `newt_net`) and deploy with:
+
+```sh
+docker compose -f compose.yml -f compose.proxy.yml up -d
 ```
 
-*(Press `Ctrl+C` to exit logs)*
+Create that network separately if it does not exist. The overlay connects only the dashboard; PostgreSQL remains on the stack network. `PORTABASE_IMAGE` can select a version or digest.
 
-## Configuration
+Back up both `DATA_DIR` (default `./data`) and `DB_DIR` (default `./db`). PostgreSQL remains on major version 17; its data path is unchanged. The dashboard's `/api/health` check follows upstream. Read release notes before upgrades and verify agents can still connect afterwards.
 
-| Variable | Description | Default / Example | Recommendation |
-| --- | --- | --- | --- |
-| `HOST_PORT` | Host interface and port binding | `8887` | Bind to a port or specific interface (e.g., Tailscale IP) or `0.0.0.0:8887` |
-| `PROJECT_NAME` | Internal name for the deployment | `portabase-dashboard` | Leave as default unless managing multiple instances |
-| `PROJECT_URL` | The external URL used to access Portabase | `https://portabase.domain.com` | Match your reverse proxy or public domain |
-| `PROJECT_SECRET` | Encryption key for agent communication | *(Empty)* | **Required.** Generate via `openssl rand -hex 32` |
-| `POSTGRES_DB` | Name of the Postgres database | `portabase` | Leave as default |
-| `POSTGRES_USER` | Postgres administrative user | `portabase` | Leave as default |
-| `POSTGRES_PASSWORD` | Password for the Postgres user | *(Empty)* | **Required.** Generate a strong password |
-| `POSTGRES_HOST` | Hostname for the Postgres container | `portabase-pg` | Leave as default (matches compose service name) |
-| `DATA_DIR` | Host path for Portabase application data | `./data` | Map to your persistent storage (e.g., `/mnt/data/portabase`) |
-| `DB_DIR` | Host path for Postgres database files | `./db` | Map to fast persistent storage (e.g., NVMe/SSD volume) |
+## Maintenance
 
+Back up persistent data before an upgrade. Choose a tested image tag or digest, consult upstream migration notes, then pull and recreate the stack. Keep the previous image reference and a restorable backup; database migrations can make a simple image rollback unsafe.
+
+Fixed container names have been removed so separate Compose projects can coexist. Scripts using old container names should use `docker compose exec SERVICE` instead. Existing bind-mount paths are retained.

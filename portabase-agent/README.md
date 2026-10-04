@@ -1,86 +1,41 @@
-# portabase-agent
+# Portabase agent
 
-The lightweight, remote execution agent for Portabase. Deploy this agent on any Docker host to securely communicate with your central Portabase dashboard and execute automated database backups.
+An agent that connects the Portabase dashboard to your database services.
 
-## Quick Start
+[Upstream documentation](https://portabase.io/docs/agent/setup) · [Validation results](../VALIDATION.md)
 
-1. **Get the Repository**
-Clone the repository and navigate to the agent directory:
-```bash
-   git clone https://github.com/formless63/compose_stacks.git
-   cd compose_stacks/portabase-agent
+## Start
 
-```
+Clone this repository, then run commands from `portabase-agent/`.
 
-2. **Prepare Environment**
-Copy the example configuration file:
-```bash
+```sh
 cp .env.example .env
-
-```
-
-
-3. **Initialize Configuration File**
-Create the empty JSON configuration file. **Do not skip this step**, or Docker will create a directory instead of a file, causing the container to crash:
-```bash
-touch databases.json
-
-```
-
-
-4. **Edit Configuration**
-Open the configuration file:
-```bash
-nano .env
-
-```
-
-
-* Paste the `EDGE_KEY` generated from your Portabase dashboard.
-* Define your `AGENT_DIR` if you aren't storing `databases.json` in the current working directory.
-
-
-5. **Network Preparation**
-The compose file defines `service1_net` and `service2_net` as external. Ensure these networks exist (they should be the networks where your target databases reside):
-```bash
-docker network ls
-# If missing, create them or update the compose file to match your existing database networks
-
-```
-
-
-6. **Launch**
-Start the stack in detached mode:
-```bash
+# Edit .env; generate required secrets and configure URLs/storage.
+docker compose config --quiet
 docker compose up -d
-
+docker compose logs --tail=100
 ```
 
+## Configuration and compatibility
 
-7. **Verify**
-Check the logs to ensure the agent authenticated with the dashboard successfully:
-```bash
-docker compose logs -f
+Set `EDGE_KEY` to the key issued by your dashboard. Prepare the writable JSON configuration file before launching:
 
+```sh
+cp databases.example.json databases.json
 ```
 
+The sample is valid JSON containing an empty `databases` list. Configure actual database entries using the upstream schema/dashboard instructions. `AGENT_DIR` can point to another directory containing this file. The bind mount refuses to create a missing host path, avoiding Docker silently creating a directory.
 
+Set `DATABASE_NETWORK_1` and `DATABASE_NETWORK_2` to existing networks containing the databases. Both must exist; for one shared database network, set both to the same name. Database hostnames are the service/container DNS names on those networks. Change `POLLING` if needed (1–600 seconds; at least 5 is recommended). Compose passes this to the upstream variable `POOLING`, which is its actual spelling; the old container variable `POLLING` was ignored. Larger values reduce polling frequency.
 
-## Configuration
+`host.docker.internal` maps to the host gateway. It can reach services listening on that reachable host address; it cannot reach a service bound exclusively to host `127.0.0.1`. `localhost` inside the agent remains the agent itself. Existing database entries that used `localhost` for a host database should use `host.docker.internal` and a reachable host listener.
 
-### Environment Variables (.env)
+The configuration mount is writable because the agent may update it. Restrict host access to this file: it can contain database credentials. This example targets network database backups and does not mount the Docker socket. Docker-volume backup features require additional upstream setup and grant broad host access.
 
-| Variable | Description | Default | Recommendation |
-| --- | --- | --- | --- |
-| `AGENT_DIR` | Host path containing `databases.json` | `.` (Current Dir) | Leave blank for current directory, or specify an absolute path |
-| `TZ` | Timezone for cron schedules and logs | `UTC` | Match your host or Portabase dashboard timezone |
-| `EDGE_KEY` | Authentication key from Portabase dashboard | *(Empty)* | **Required.** Paste the exact key from the dashboard UI |
+Verify registration and a backup/restore of a disposable database against your own dashboard before using this for real backups. An environment key is required for that integration check.
 
-### Agent Service Settings (docker-compose.yml)
+## Maintenance
 
-| Variable | Description | Default | Notes |
-| --- | --- | --- | --- |
-| `POLLING` | Frequency (in seconds) the agent checks for jobs | `5` | Decrease to `10` or `15` if you have many agents to reduce dashboard load |
-| `APP_ENV` | Application execution context | `production` | Leave as default |
-| `LOG` | Logging verbosity | `info` | Change to `debug` for troubleshooting connection issues |
-| `extra_hosts` | Host resolution overrides | `localhost:host-gateway` | Allows the agent to backup databases mapped directly to the host's loopback interface |
+Back up persistent data before an upgrade. Choose a tested image tag or digest, consult upstream migration notes, then pull and recreate the stack. Keep the previous image reference and a restorable backup; database migrations can make a simple image rollback unsafe.
+
+Fixed container names have been removed so separate Compose projects can coexist. Scripts using old container names should use `docker compose exec SERVICE` instead. Existing bind-mount paths are retained.
