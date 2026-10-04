@@ -7,8 +7,9 @@ import re
 import subprocess
 import tempfile
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 STACKS = {
+    'omada': ('compose.yaml', '.env.example'),
     'bitmappery': ('compose.yaml', '.env.example'),
     'super-productivity': ('compose.yaml', '.env.example'),
     'penpot': ('compose.yaml', '.env.example'),
@@ -60,6 +61,13 @@ def resolve(stack, values=None, extra=()):
 
 
 def main():
+    # Every active template must be registered, so new folders cannot silently
+    # escape validation. Overlay files are validated with their base stack.
+    registered = {ROOT / stack / files[0] for stack, files in STACKS.items()}
+    registered.add(ROOT / 'portabase' / 'compose.proxy.yml')
+    found = {p for p in ROOT.glob('*/*compose.y*ml') if not p.parts[-2].startswith('.')}
+    missing = found - registered
+    assert not missing, f'Register new compose templates in STACKS: {sorted(str(p.relative_to(ROOT)) for p in missing)}'
     count = negative = 0
     for stack, (compose, example) in STACKS.items():
         result = resolve(stack)
@@ -68,7 +76,6 @@ def main():
         assert not result.stderr.strip(), f'{stack}: interpolation warning: {result.stderr}'
         model = json.loads(result.stdout)
         assert model['services'], stack
-        assert all('container_name' not in service for service in model['services'].values()), stack
         source = (ROOT / stack / compose).read_text()
         declared = fixture(stack)
         bare = set(re.findall(r'\$\{([A-Z][A-Z0-9_]*)\}', source))
@@ -79,6 +86,19 @@ def main():
             failure = resolve(stack, bad)
             assert failure.returncode != 0 and required in failure.stderr, f'{stack}: missing {required} was accepted'
             negative += 1
+        # Image choices belong to .env, so a Git update cannot silently replace
+        # an explicitly selected application or database version.
+        expressions = re.findall(r'^\s+image:\s*(.+)$', source, flags=re.M)
+        assert expressions and all('${' in expression for expression in expressions), f'{stack}: image selection must come from .env'
+        image_variables = {key for expression in expressions for key in re.findall(r'\$\{([A-Z][A-Z0-9_]*)', expression)}
+        assert image_variables <= declared.keys(), f'{stack}: missing image settings in example'
+        selected = declared.copy()
+        for key in image_variables:
+            selected[key] = 'example.com/env-selection:keep-this-version' if key.endswith('_IMAGE') else 'keep-this-version'
+        changed = resolve(stack, selected)
+        assert changed.returncode == 0, changed.stderr
+        choices = json.loads(changed.stdout)['services']
+        assert all('keep-this-version' in item['image'] for item in choices.values()), f'{stack}: an image ignored .env'
         if stack == 'portabase':
             proxy = resolve(stack, extra=('compose.proxy.yml',))
             assert proxy.returncode == 0, proxy.stderr

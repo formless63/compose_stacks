@@ -1,39 +1,62 @@
 # Portabase
 
-A database backup dashboard with its own PostgreSQL database.
+A database backup dashboard with PostgreSQL.
 
-[Upstream documentation](https://portabase.io/docs/dashboard/setup) · [Validation results](../VALIDATION.md)
+**Links:**
+* [Upstream project](https://github.com/Portabase/portabase)
+* [Container registry](https://hub.docker.com/r/portabase/portabase)
 
-## Start
+## Quick Start
 
-Clone this repository, then run commands from `portabase/`.
+1. **Get the Repository**
+   Clone the repository and navigate to the service directory:
+```bash
+git clone https://github.com/formless63/compose_stacks.git
+cd compose_stacks/portabase
+```
 
-```sh
+2. **Prepare Environment**
+   Copy the example configuration file:
+```bash
 cp .env.example .env
-# Edit .env; generate required secrets and configure URLs/storage.
-docker compose config --quiet
+```
+
+3. **Edit Configuration**
+   Open the configuration file:
+```bash
+nano .env
+```
+
+* Set `PROJECT_URL`, `POSTGRES_PASSWORD` and your `_DIR` paths.
+* Generate `PROJECT_SECRET` with `openssl rand -hex 32`.
+* Set the timezone and image versions in `.env`.
+* **Save & Exit:** Press `Ctrl+X`, then `Y`, then `Enter`.
+
+4. **Launch**
+   Start the stack:
+```bash
 docker compose up -d
-docker compose logs --tail=100
 ```
 
-## Configuration and compatibility
-
-Set `PROJECT_NAME`, `PROJECT_URL`, `PROJECT_SECRET` (`openssl rand -hex 32`), and PostgreSQL credentials. `POSTGRES_HOST=portabase-pg` points to the bundled database. URL-encode reserved characters in the database password. `PROJECT_URL` also supplies the trusted application origin.
-
-`HOST_PORT=8887` is ready for a normal Docker host. To restrict exposure, use `127.0.0.1:8887` or a real host interface address. Complete the upstream onboarding screen after first launch.
-
-The normal stack needs no pre-existing proxy network. If your reverse proxy uses an external network, set `PROXY_NETWORK` (default `newt_net`) and deploy with:
-
-```sh
-docker compose -f compose.yml -f compose.proxy.yml up -d
+5. **Verify**
+   Check the startup logs:
+```bash
+docker compose logs -f
 ```
 
-Create that network separately if it does not exist. The overlay connects only the dashboard; PostgreSQL remains on the stack network. `PORTABASE_IMAGE` can select a version or digest.
+*(Press `Ctrl+C` to exit logs.)*
 
-Back up both `DATA_DIR` (default `./data`) and `DB_DIR` (default `./db`). PostgreSQL remains on major version 17; its data path is unchanged. The dashboard's `/api/health` check follows upstream. Read release notes before upgrades and verify agents can still connect afterwards.
+## Configuration
 
-## Maintenance
+Edit deployment settings in `.env`; keep it when pulling repository updates. Image selections, ports, paths and supported application settings are listed in the environment example. `latest` is a rolling tag; choose a release tag or digest if you want a fixed version.
 
-Back up persistent data before an upgrade. Choose a tested image tag or digest, consult upstream migration notes, then pull and recreate the stack. Keep the previous image reference and a restorable backup; database migrations can make a simple image rollback unsafe.
+| Variable | Description | Default | Recommendation |
+| --- | --- | --- | --- |
+| `HOST_PORT` | Web interface port | `8887` | Set in `.env` for your host |
+| `PROJECT_URL` | Public URL | `Your dashboard URL` | Set in `.env` for your host |
+| `PROJECT_SECRET` | Application secret | `Generate a unique value` | Set in `.env` for your host |
+| `PORTABASE_IMAGE / POSTGRES_IMAGE` | Application / database versions | `See .env.example` | Set in `.env` for your host |
+| `POSTGRES_PASSWORD` | Database password | `Set a strong password` | Set in `.env` for your host |
+| `DATA_DIR / DB_DIR` | Application / database storage | `./data / ./db` | Set in `.env` for your host |
 
-Fixed container names have been removed so separate Compose projects can coexist. Scripts using old container names should use `docker compose exec SERVICE` instead. Existing bind-mount paths are retained.
+[Update and advanced setup notes](../.resources/maintenance/portabase.md)

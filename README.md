@@ -1,39 +1,37 @@
-# Tested Docker Compose stacks
+# compose_stacks
 
-Community deployment examples for BitMappery, Super Productivity / SuperSync, Penpot, Directus, Portabase and its agent, Storyteller, and ReadMeABook. These are independent stacks; deploy only the ones you need.
+A public collection of Docker Compose stacks that have been tested for self-hosting.
 
-| Stack | Purpose | Setup |
+## Getting Started
+
+1. Choose a stack below and open its setup guide.
+2. Copy its `.env.example` to `.env` (Directus uses `external-db-.env.example`).
+3. Edit `.env` for your host: image versions, URLs, ports, secrets and data paths.
+4. Run `docker compose up -d` from the stack directory. Directus's guide includes its explicit filename.
+
+Keep your `.env` and data when pulling updates. Read the stack's update notes before changing application or database versions.
+
+## Stacks
+
+| Stack | Compose file | Guide |
 | --- | --- | --- |
-| BitMappery | Browser image editor | [Guide](bitmappery/README.md) |
-| Super Productivity / SuperSync | Productivity app and device sync | [Guide](super-productivity/README.md) |
-| Penpot | Collaborative design | [Guide](penpot/README.md) |
-| Directus | Data platform with external PostgreSQL | [Guide](directus/README.md) |
-| Portabase | Database backup dashboard | [Guide](portabase/README.md) |
-| Portabase agent | Remote database backup agent | [Guide](portabase-agent/README.md) |
-| Storyteller | Ebooks with synchronized audiobook narration | [Guide](storyteller/README.md) |
-| ReadMeABook | Audiobook requests and library management | [Guide](readmeabook/README.md) |
+| BitMappery | `bitmappery/compose.yaml` | [Setup](bitmappery/README.md) |
+| Super Productivity | `super-productivity/compose.yaml` | [Setup](super-productivity/README.md) |
+| Penpot | `penpot/compose.yaml` | [Setup](penpot/README.md) |
+| Directus | `directus/external-db-compose.yaml` | [Setup](directus/README.md) |
+| Portabase | `portabase/compose.yml` | [Setup](portabase/README.md) |
+| Portabase agent | `portabase-agent/compose.yml` | [Setup](portabase-agent/README.md) |
+| Storyteller | `storyteller/compose.yaml` | [Setup](storyteller/README.md) |
+| ReadMeABook | `readmeabook/compose.yaml` | [Setup](readmeabook/README.md) |
+| Omada Controller | `omada/compose.yaml` | [Setup](omada/README.md) |
 
-Run commands from the selected stack directory. Copy its environment example, edit URLs, secrets, permissions and storage paths, then check `docker compose config --quiet` before launching. Directus uses explicit filenames: see its guide. Required empty settings fail with a useful error. Examples are templates, not production credentials.
+## Management Tools
 
-Published ports bind all host interfaces by default unless an address is specified. Configure your firewall or supply a loopback/interface address in the port setting where supported. Services using secure cookies or passkeys need HTTPS through your reverse proxy. External networks are documented per stack.
+* [Dockhand](https://dockhand.pro/) — use the Compose path above for a Git-backed stack, and set host values in its environment overrides.
+* [Komodo](https://komo.do/) — infrastructure and Compose stack management.
 
-## Validation
+## Repository Layout
 
-[VALIDATION.md](VALIDATION.md) records what was actually tested, exact image identities and remaining limitations. Configuration validation is separate from startup and functional validation. Files in `.retired/` are archived examples and are excluded from active checks.
+Each stack has its own directory with a Compose file, environment example and README. Supporting material stays under `.resources/`: [templates](.resources/templates), [maintenance notes](.resources/maintenance), and [validation results and tools](.resources/validation/README.md). Retired stacks are in `.retired/`.
 
-```sh
-python3 scripts/validate.py
-python3 scripts/smoke.py bitmappery
-```
-
-The first command resolves all eight active stacks and checks required-variable failures without starting services. CI runs it for pushes and pull requests. A separate manual/weekly workflow runs the seven disposable application smoke tests and retains their image identities and logs. The second creates a disposable test project with fresh named volumes and random loopback ports; it never reads deployment `.env` files or mounts deployment data. It cleans up its own resources afterwards. Other supported smoke targets are `super-productivity`, `penpot`, `directus`, `portabase`, `storyteller`, and `readmeabook`. The agent requires an actual dashboard registration and disposable database backup/restore; it has configuration validation only here.
-
-Smoke tests use public fixture secrets, an isolated mail sink for Penpot, and a disposable external database for Directus. They check the application response and persistence through a restart. They do not cover every integration or establish production upgrade safety. `--image SERVICE=IMAGE` selects a local image for an individual service.
-
-## Updates and backups
-
-Pin a tested release or immutable digest where practical. Floating `latest` tags can change between pulls; save the running digest before upgrading. Keep application images in multi-service stacks on a matching release. Existing database major versions and bind paths are preserved; changing a database image's major version requires a deliberate data migration.
-
-Back up databases with supported tools and retain application files and secrets. Test restoration. Consult each guide for migration ordering, especially SuperSync. No stack should be updated against live data merely to validate this repository.
-
-[Komodo](https://komo.do/) and [Dockhand](https://dockhand.pro/) can help manage deployments; Docker Compose CLI remains supported.
+For new stacks, follow `.resources/templates`, use `compose.yaml`, and register the stack in the validation tool. Existing filenames are preserved for compatibility.

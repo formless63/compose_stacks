@@ -1,11 +1,12 @@
 x-logging: &default-logging
   driver: json-file
   options:
-    max-size: "10m"
-    max-file: "3"
+    max-size: "${LOG_MAX_SIZE:-10m}"
+    max-file: "${LOG_MAX_FILES:-3}"
 
 services:
   directus:
+    container_name: ${CONTAINER_NAME:-directus}
     image: directus/directus:${DIRECTUS_VERSION:-latest}
     restart: unless-stopped
     logging: *default-logging
@@ -38,15 +39,15 @@ services:
       DB_POOL_MAX: ${DB_POOL_MAX:-10}
 
       # Cache
-      CACHE_ENABLED: "true"
-      CACHE_AUTO_PURGE: "true"
+      CACHE_ENABLED: "${CACHE_ENABLED:-true}"
+      CACHE_AUTO_PURGE: "${CACHE_AUTO_PURGE:-true}"
       CACHE_STORE: redis
       REDIS: redis://directus-cache:6379
-      CACHE_SCHEMA: "true"
+      CACHE_SCHEMA: "${CACHE_SCHEMA:-true}"
 
       # Performance / noise reduction
-      TELEMETRY: "false"
-      LOG_LEVEL: "warn"
+      TELEMETRY: "${TELEMETRY:-false}"
+      LOG_LEVEL: "${LOG_LEVEL:-warn}"
 
     volumes:
       - ${DIRECTUS_UPLOADS_DIR:-./uploads}:/directus/uploads
@@ -64,6 +65,7 @@ services:
       start_period: 30s
 
   directus-cache:
+    container_name: ${CACHE_CONTAINER_NAME:-directus-cache}
     image: redis:${REDIS_VERSION:-8-alpine}
     restart: unless-stopped
     logging: *default-logging
@@ -79,6 +81,7 @@ services:
 
 networks:
   directus:
+    name: ${NETWORK_NAME:-directus}
     driver: bridge
 #  db_net:   # Uncomment these two lines and adjust to tie to your existing db stack
 #    external: true

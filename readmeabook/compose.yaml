@@ -1,11 +1,12 @@
 x-logging: &default-logging
   driver: json-file
   options:
-    max-size: "10m"
-    max-file: "3"
+    max-size: "${LOG_MAX_SIZE:-10m}"
+    max-file: "${LOG_MAX_FILES:-3}"
 
 services:
   readmeabook:
+    container_name: ${CONTAINER_NAME:-readmeabook}
     image: ${READMEABOOK_IMAGE:-ghcr.io/kikootwo/readmeabook:latest}
     restart: unless-stopped
     logging: *default-logging

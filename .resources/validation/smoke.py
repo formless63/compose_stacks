@@ -5,6 +5,10 @@ No user .env files, bind-mounted data, fixed container names, or external networ
 are used. All test resources are removed on success or failure.
 """
 import argparse
+import http.client
+import socket
+import ssl
+from urllib.parse import urlsplit
 import json
 from pathlib import Path
 import subprocess
@@ -16,6 +20,7 @@ import uuid
 from validate import fixture, resolve
 
 ENDPOINTS = {
+    'omada': ('omada', 8043, '/'),
     'bitmappery': ('bitmappery', 5173, '/'),
     'super-productivity': ('supersync', 1900, '/health'),
     'penpot': ('penpot-frontend', 8080, '/'),
@@ -86,14 +91,47 @@ def smoke(stack, images):
             def url():
                 binding = run(command + ['port', service, str(port)]).strip()
                 return 'http://' + binding
+            def omada_request(endpoint):
+                # Trust only this disposable controller's generated certificate.
+                # The actual HTTPS request verifies both the certificate and its
+                # own certificate identity; no global TLS settings are relaxed.
+                binding = run(command + ['port', service, str(port)]).strip()
+                host, mapped_port = binding.rsplit(':', 1)
+                cert = ssl.get_server_certificate((host, int(mapped_port)), timeout=10)
+                certfile = Path(directory) / 'controller.pem'
+                certfile.write_text(cert)
+                decoded = ssl._ssl._test_decode_cert(str(certfile))
+                dns = [value for kind, value in decoded.get('subjectAltName', ()) if kind == 'DNS' and '*' not in value]
+                names = [value for group in decoded['subject'] for key, value in group if key == 'commonName']
+                identity = (dns or names)[0]
+                context = ssl.create_default_context(cadata=cert)
+                path = endpoint
+                for _ in range(5):
+                    with socket.create_connection((host, int(mapped_port)), timeout=10) as raw:
+                        with context.wrap_socket(raw, server_hostname=identity) as tls:
+                            tls.sendall(f'GET {path} HTTP/1.1\r\nHost: {identity}\r\nConnection: close\r\n\r\n'.encode())
+                            response = http.client.HTTPResponse(tls)
+                            response.begin()
+                            body = response.read()
+                            if response.status in (301, 302, 303, 307, 308):
+                                location = urlsplit(response.getheader('Location'))
+                                path = location.path or '/'
+                                if location.query:
+                                    path += '?' + location.query
+                                continue
+                            assert response.status == 200, response.status
+                            return body, response.headers
+                raise AssertionError('Controller redirect loop')
             def request(endpoint):
+                if stack == 'omada':
+                    return omada_request(endpoint)
                 with HTTP.open(url() + endpoint, timeout=10) as response:
                     return response.read(), response.headers
-            deadline = time.monotonic() + 240
+            deadline = time.monotonic() + (360 if stack == 'omada' else 240)
             while True:
                 try:
                     body, headers = request(endpoint)
-                    if stack in ('bitmappery', 'penpot', 'storyteller'):
+                    if stack in ('bitmappery', 'penpot', 'storyteller', 'omada'):
                         assert b'<html' in body.lower(), 'Expected HTML application'
                     elif stack == 'directus':
                         assert body == b'pong', 'Expected Directus server ping'

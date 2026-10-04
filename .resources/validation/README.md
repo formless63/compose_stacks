@@ -1,18 +1,22 @@
 # Validation record
 
 Validated on 2026-10-04 using Docker 28.4.0 and Compose 2.40.3 on Linux AMD64.
-[Exact image IDs, registry digests and source revisions](validation/results.json).
+[Exact image IDs, registry digests and source revisions](results.json).
+
+Following the template correction, all nine stacks were checked again with environment-selected images. Penpot, SuperSync and Omada functional tests were rerun successfully; the remaining application evidence below comes from the preceding maintenance pass with the same default images. Container names and logging limits are now configurable, and validation tools/results live entirely under `.resources/`.
 
 ## Completed checks
 
-- All eight active stacks resolved successfully using `python3 scripts/validate.py`, with no interpolation warnings.
-- 26 checks confirmed that empty required settings fail with an explanatory message.
+- All nine active stacks resolved successfully using `python3 .resources/validation/validate.py`, with no interpolation warnings.
+- 25 checks confirmed that empty required settings fail with an explanatory message.
+- All application/database image selections were overridden through fixture environment values and confirmed in the resolved models, proving that `.env` choices take effect.
 - Portabase's optional proxy overlay resolved successfully.
 - Both GitHub workflows passed actionlint 1.7.12. ShellCheck was unavailable locally; actionlint's ShellCheck integration was disabled for that local run.
 - Python validation/smoke helpers compiled, and `git diff --check` passed.
 
 | Stack | Functional evidence |
 | --- | --- |
+| Omada 6.2 | Controller setup HTML served over HTTPS with its generated certificate trusted only for the disposable test; controller data survived restart. LAN adoption was not tested. |
 | BitMappery | HTML application, compiled JavaScript asset, SPA fallback. No persistent service data required. |
 | Super Productivity / SuperSync | All 29 migrations applied against disposable PostgreSQL 15, healthy API with connected database, web frontend served HTML, application data survived server restart. |
 | Penpot 2.18.1 | Full stack started with PostgreSQL 15, Valkey and isolated mail sink; anonymous-profile backend RPC succeeded through nginx; actual exporter Chromium rendered and inspected a local page; shared assets volume survived frontend restart. |
@@ -26,7 +30,7 @@ All smoke containers, project networks and test volumes were removed afterwards.
 
 ## Cloud adaptations and limits
 
-This environment uses Docker's VFS storage driver with a 32 GB filesystem. Normal pulls of large multi-layer images exceeded that limit. ReadMeABook, Storyteller, Portabase, Directus and the five Penpot application images were exported from immutable upstream registry references using checksum-verified crane 0.22.1, then imported locally as single-layer filesystems. Upstream entrypoint, command, environment, working directory, user, ports, volumes and labels were restored; explicit Compose health checks were retained. The record lists both the upstream reference and the local test image ID. Published Compose definitions still use normal upstream images. Initial disk-limited runs were retried after deleting unused test image caches; the table records completed successful runs.
+This environment uses Docker's VFS storage driver with a 32 GB filesystem. Normal pulls of large multi-layer images exceeded that limit. Omada, ReadMeABook, Storyteller, Portabase, Directus and the five Penpot application images were exported from immutable upstream registry references using checksum-verified crane 0.22.1, then imported locally as single-layer filesystems. Upstream entrypoint, command, environment, working directory, user, ports, volumes and labels were restored; explicit Compose health checks were retained. The record lists both the upstream reference and the local test image ID. Published Compose definitions still use normal upstream images. Initial disk-limited runs were retried after deleting unused test image caches; the table records completed successful runs.
 
 BitMappery and SuperSync used the locally built companion images from the docker-builds maintenance work, rather than asserting that a particular public `latest` tag already contains those changes. See that repository's validation record for its build adaptations. The other application images were pulled/exported from their upstream registries. Redis was pinned to the currently published major version 8 to avoid a cache downgrade from the previous `latest` default. Native ARM64 runs and GitHub-hosted CI execution have not been performed here.
 
@@ -35,8 +39,8 @@ These checks establish fresh deployment behavior and selected application paths.
 ## Repeat
 
 ```sh
-python3 scripts/validate.py
-python3 scripts/smoke.py STACK
+python3 .resources/validation/validate.py
+python3 .resources/validation/smoke.py STACK
 ```
 
 Run one large stack at a time on storage-limited hosts. Smoke tests create their own resources and clean them up. `--image SERVICE=IMAGE` allows testing a local image; use the same image for both SuperSync's server and migration job. The standard smoke workflow runs each application in a separate GitHub runner, manually or weekly, and uploads its results. The agent is intentionally excluded from unattended functional checks that would require real registration credentials.

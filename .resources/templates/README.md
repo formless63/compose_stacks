@@ -11,7 +11,7 @@
 1. **Get the Repository**
    Clone the repository and navigate to the service directory:
 ```bash
-   git clone [https://github.com/formless63/compose_stacks.git](https://github.com/formless63/compose_stacks.git)
+   git clone https://github.com/formless63/compose_stacks.git
    cd compose_stacks/[directory_name]
 ```
 
@@ -56,6 +56,7 @@ docker compose logs -f
 
 | Variable | Description | Default | Recommendation |
 | --- | --- | --- | --- |
+| `APP_IMAGE` | Container image/tag or digest | `owner/image:version` | Choose a tested version in `.env` |
 | `APP_PORT` | Port for the web interface | `[PORT]` | Change if port is already in use |
 | `PUID` / `PGID` | User and Group ID for file permissions | `1000` | Set to your host user ID (run `id $USER`) |
 | `[VAR_NAME]` | [Description] | `[Default]` | [Recommendation] |

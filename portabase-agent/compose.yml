@@ -1,11 +1,12 @@
 x-logging: &default-logging
   driver: json-file
   options:
-    max-size: "10m"
-    max-file: "3"
+    max-size: "${LOG_MAX_SIZE:-10m}"
+    max-file: "${LOG_MAX_FILES:-3}"
 
 services:
   portabase-agent:
+    container_name: ${CONTAINER_NAME:-portabase-agent}
     image: ${AGENT_IMAGE:-portabase/agent:latest}
     restart: always
     logging: *default-logging
@@ -22,8 +23,8 @@ services:
       TZ: "${TZ:-UTC}"
       # Upstream names this variable POOLING; keep POLLING as our .env setting.
       POOLING: ${POLLING:-5}
-      APP_ENV: production
-      LOG: info
+      APP_ENV: ${APP_ENV:-production}
+      LOG: ${LOG_LEVEL:-info}
       EDGE_KEY: "${EDGE_KEY:?Paste the dashboard agent key in .env}"
     networks:
       - service1_net

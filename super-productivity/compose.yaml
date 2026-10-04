@@ -1,15 +1,16 @@
 x-logging: &default-logging
   driver: 'json-file'
   options:
-    max-size: '10m'
-    max-file: '3'
+    max-size: "${LOG_MAX_SIZE:-10m}"
+    max-file: "${LOG_MAX_FILES:-3}"
     
 services:
   # --------------------------------------------------------------------------------
   # Database
   # --------------------------------------------------------------------------------
   db:
-    image: postgres:15-alpine
+    container_name: ${DB_CONTAINER_NAME:-supersync_db}
+    image: ${POSTGRES_IMAGE:-postgres:15-alpine}
     init: true
     stop_grace_period: 60s
     restart: unless-stopped
@@ -38,8 +39,8 @@ services:
     healthcheck:
       disable: true
     environment:
-      NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER:-supersync}:${POSTGRES_PASSWORD:?Set a strong database password in .env}@db:5432/${POSTGRES_DB:-supersync_db}?connection_limit=60&pool_timeout=10
+      NODE_ENV: ${NODE_ENV:-production}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-supersync}:${POSTGRES_PASSWORD:?Set a strong database password in .env}@db:5432/${POSTGRES_DB:-supersync_db}?connection_limit=${DB_CONNECTION_LIMIT:-60}&pool_timeout=${DB_POOL_TIMEOUT:-10}
       REQUIRE_DATABASE_POOL_LIMITS: "true"
     logging: *default-logging
 
@@ -48,6 +49,7 @@ services:
   # Host Example: https://sp-sync.domain.com
   # --------------------------------------------------------------------------------
   supersync:
+    container_name: ${SYNC_CONTAINER_NAME:-supersync}
     image: ${SUPERSYNC_IMAGE:-ghcr.io/formless63/supersync:latest}
     restart: unless-stopped
     logging: *default-logging
@@ -63,11 +65,11 @@ services:
       - ${SUPERSYNC_DATA_DIR:-./supersync/data}:/app/data
     environment:
       NODE_ENV: "${NODE_ENV:-production}"
-      HOST: 0.0.0.0
+      HOST: ${SYNC_HOST:-0.0.0.0}
       PORT: 1900
       RUN_MIGRATIONS_ON_STARTUP: "false"
       REQUIRE_DATABASE_POOL_LIMITS: "true"
-      DATABASE_URL: postgresql://${POSTGRES_USER:-supersync}:${POSTGRES_PASSWORD:?Set a strong database password in .env}@db:5432/${POSTGRES_DB:-supersync_db}?connection_limit=60&pool_timeout=10
+      DATABASE_URL: postgresql://${POSTGRES_USER:-supersync}:${POSTGRES_PASSWORD:?Set a strong database password in .env}@db:5432/${POSTGRES_DB:-supersync_db}?connection_limit=${DB_CONNECTION_LIMIT:-60}&pool_timeout=${DB_POOL_TIMEOUT:-10}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
       SUPERSYNC_HIDE_UPSTREAM_NOTICE: "${SUPERSYNC_HIDE_UPSTREAM_NOTICE:-false}"
       CORS_ORIGINS: ${APP_PUBLIC_URL:?Set APP_PUBLIC_URL in .env}
@@ -97,7 +99,8 @@ services:
   # Host Example: https://sp.domain.com
   # --------------------------------------------------------------------------------
   app:
-    image: johannesjo/super-productivity:latest
+    container_name: ${APP_CONTAINER_NAME:-super-productivity}
+    image: ${APP_IMAGE:-johannesjo/super-productivity:latest}
     restart: unless-stopped
     logging: *default-logging
     ports:

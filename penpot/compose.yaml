@@ -1,8 +1,8 @@
 x-logging: &default-logging
   driver: json-file
   options:
-    max-size: "10m"
-    max-file: "3"
+    max-size: "${LOG_MAX_SIZE:-10m}"
+    max-file: "${LOG_MAX_FILES:-3}"
 
 # compose.yaml
 #
@@ -63,7 +63,7 @@ services:
       # Database
       PENPOT_DATABASE_URI: ${PENPOT_DATABASE_URI}
       PENPOT_DATABASE_USERNAME: ${PENPOT_DATABASE_USERNAME}
-      PENPOT_DATABASE_PASSWORD: ${PENPOT_DATABASE_PASSWORD:?Set PENPOT_DATABASE_PASSWORD in .env}
+      PENPOT_DATABASE_PASSWORD: ${PENPOT_DATABASE_PASSWORD:-${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}}
       # Valkey/Redis
       PENPOT_REDIS_URI: ${PENPOT_REDIS_URI}
       # Assets storage
@@ -92,7 +92,7 @@ services:
       PENPOT_SECRET_KEY: ${PENPOT_SECRET_KEY:?Set PENPOT_SECRET_KEY in .env}
       PENPOT_DATABASE_URI: ${PENPOT_DATABASE_URI}
       PENPOT_DATABASE_USERNAME: ${PENPOT_DATABASE_USERNAME}
-      PENPOT_DATABASE_PASSWORD: ${PENPOT_DATABASE_PASSWORD:?Set PENPOT_DATABASE_PASSWORD in .env}
+      PENPOT_DATABASE_PASSWORD: ${PENPOT_DATABASE_PASSWORD:-${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}}
       PENPOT_INTERNAL_URI: http://penpot-frontend:8080
 
   penpot-mcp:
@@ -118,7 +118,7 @@ services:
       PENPOT_REDIS_URI: ${PENPOT_REDIS_URI}
 
   penpot-postgres:
-    image: "postgres:15"
+    image: "${POSTGRES_IMAGE:-postgres:15}"
     restart: unless-stopped
     logging: *default-logging
     stop_signal: SIGINT
@@ -139,7 +139,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
 
   penpot-valkey:
-    image: "valkey/valkey:8.1"
+    image: "${VALKEY_IMAGE:-valkey/valkey:8.1}"
     restart: unless-stopped
     logging: *default-logging
     healthcheck:

@@ -1,17 +1,18 @@
 x-logging: &default-logging
   driver: json-file
   options:
-    max-size: "10m"
-    max-file: "3"
+    max-size: "${LOG_MAX_SIZE:-10m}"
+    max-file: "${LOG_MAX_FILES:-3}"
 
 services:
   portabase:
+    container_name: ${CONTAINER_NAME:-portabase}
     image: ${PORTABASE_IMAGE:-portabase/portabase:latest}
     restart: always
     logging: *default-logging
     environment:
-      - NODE_ENV=production
-      - TZ=${TZ:-UTC}
+      - NODE_ENV=${NODE_ENV:-production}
+      - TZ=${TZ:-America/New_York}
       - TRUSTED_DOMAINS=${PROJECT_URL:?Set PROJECT_URL in .env}
       - PROJECT_NAME=${PROJECT_NAME:?Set PROJECT_NAME in .env}
       - PROJECT_URL=${PROJECT_URL:?Set PROJECT_URL in .env}
@@ -20,7 +21,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER:?Set POSTGRES_USER in .env}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       - POSTGRES_HOST=${POSTGRES_HOST:?Set POSTGRES_HOST in .env}
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@portabase-pg:5432/${POSTGRES_DB}?schema=public
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST:-portabase-pg}:5432/${POSTGRES_DB}?schema=public
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/api/health"]
       interval: 30s
@@ -38,7 +39,8 @@ services:
       - portabase_internal
 
   portabase-pg:
-    image: postgres:17-alpine
+    container_name: ${DB_CONTAINER_NAME:-portabase-pg}
+    image: ${POSTGRES_IMAGE:-postgres:17-alpine}
     restart: always
     logging: *default-logging
     volumes:
@@ -57,4 +59,5 @@ services:
 
 networks:
   portabase_internal:
+    name: ${NETWORK_NAME:-portabase_internal}
     driver: bridge

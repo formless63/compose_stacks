@@ -15,12 +15,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        stack: [bitmappery, super-productivity, penpot, directus, portabase, storyteller, readmeabook]
+        stack: [omada, bitmappery, super-productivity, penpot, directus, portabase, storyteller, readmeabook]
     steps:
       - uses: actions/checkout@v4
       - name: Test disposable stack
         shell: bash
-        run: python3 scripts/smoke.py '${{ matrix.stack }}' 2>&1 | tee smoke-result.log
+        run: python3 .resources/validation/smoke.py '${{ matrix.stack }}' 2>&1 | tee smoke-result.log
       - uses: actions/upload-artifact@v4
         if: always()
         with:

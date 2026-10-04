@@ -1,0 +1,40 @@
+name: omada
+
+services:
+  omada:
+    container_name: ${CONTAINER_NAME:-omada}
+    image: mbentley/omada-controller:${OMADA_VERSION:-6.2}
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "${LOG_MAX_SIZE:-10m}"
+        max-file: "${LOG_MAX_FILES:-3}"
+    stop_grace_period: 60s
+    ulimits:
+      nofile:
+        soft: 4096
+        hard: 8192
+    environment:
+      TZ: "${TZ:-America/New_York}"
+      PUID: ${PUID:-508}
+      PGID: ${PGID:-508}
+      MANAGE_HTTPS_PORT: ${APP_PORT:-8043}
+      MANAGE_HTTP_PORT: ${HTTP_PORT:-8088}
+      PORTAL_HTTP_PORT: ${HTTP_PORT:-8088}
+      PORTAL_HTTPS_PORT: ${PORTAL_HTTPS_PORT:-8843}
+    ports:
+      # Discovery / adoption / management
+      - "19810:19810/udp"
+      - "27001:27001/udp"
+      - "29810:29810/udp"
+      - "29811-29817:29811-29817/tcp"
+
+      # Controller UI / captive portal. Set OMADA_BIND_IP to limit these
+      # listeners to a specific host interface (for example, a Tailscale IP).
+      - "${OMADA_BIND_IP:-0.0.0.0}:${APP_PORT:-8043}:${APP_PORT:-8043}/tcp"
+      - "${OMADA_BIND_IP:-0.0.0.0}:${HTTP_PORT:-8088}:${HTTP_PORT:-8088}/tcp"
+      - "${OMADA_BIND_IP:-0.0.0.0}:${PORTAL_HTTPS_PORT:-8843}:${PORTAL_HTTPS_PORT:-8843}/tcp"
+    volumes:
+      - "${DATA_DIR:-./data}:/opt/tplink/EAPController/data"
+      - "${LOGS_DIR:-./logs}:/opt/tplink/EAPController/logs"

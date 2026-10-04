@@ -1,14 +1,33 @@
+#This is crucial so you don't accidentally commit your passwords or 5GB of database files to GitHub if you store your configs there.
+
+# --- Security ---
+# Ignore the actual environment file containing secrets
 .env
-.env.*
 
-# Penpot data
-penpot/
-postgres/
-assets/
+# --- Data Directories ---
+# Ignore local folders created by the container
+# Matches the default ./ paths in .env.example
+config/
+data/
+db/
+media/
+downloads/
+logs/
 
-# Logs
-*.log
-
-# OS junk
+# --- System Junk ---
 .DS_Store
 Thumbs.db
+
+# Additional default persistence folders
+cache/
+pgdata/
+redis/
+uploads/
+extensions/
+assets/
+postgres/
+
+# Preserve existing stack-specific exclusions
+.env.*
+penpot/
+*.log

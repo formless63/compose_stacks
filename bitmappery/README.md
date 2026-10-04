@@ -1,27 +1,57 @@
 # BitMappery
 
-A browser image editor served as a production static site by nginx.
+A browser-based image editor.
 
-[Upstream documentation](https://github.com/igorski/bitmappery) · [Validation results](../VALIDATION.md)
+**Links:**
+* [Upstream project](https://github.com/igorski/bitmappery)
+* [Container registry](https://github.com/formless63/docker-builds/pkgs/container/bitmappery)
 
-## Start
+## Quick Start
 
-Clone this repository, then run commands from `bitmappery/`.
-
-```sh
-cp .env.example .env
-# Edit .env; generate required secrets and configure URLs/storage.
-docker compose config --quiet
-docker compose up -d
-docker compose logs --tail=100
+1. **Get the Repository**
+   Clone the repository and navigate to the service directory:
+```bash
+git clone https://github.com/formless63/compose_stacks.git
+cd compose_stacks/bitmappery
 ```
 
-## Configuration and compatibility
+2. **Prepare Environment**
+   Copy the example configuration file:
+```bash
+cp .env.example .env
+```
 
-Open `http://localhost:5173` (or your chosen `APP_PORT`). No persistent container storage is required; save your work from the browser. The new production image retains container port 5173. `BITMAPPERY_IMAGE` can select a dated tag or digest from the community build repository.
+3. **Edit Configuration**
+   Open the configuration file:
+```bash
+nano .env
+```
 
-## Maintenance
+* Change `APP_PORT` if port 5173 is already in use.
+* Choose `BITMAPPERY_IMAGE` in `.env`; use a dated tag or digest to keep the same version across updates.
+* **Save & Exit:** Press `Ctrl+X`, then `Y`, then `Enter`.
 
-Back up persistent data before an upgrade. Choose a tested image tag or digest, consult upstream migration notes, then pull and recreate the stack. Keep the previous image reference and a restorable backup; database migrations can make a simple image rollback unsafe.
+4. **Launch**
+   Start the stack:
+```bash
+docker compose up -d
+```
 
-Fixed container names have been removed so separate Compose projects can coexist. Scripts using old container names should use `docker compose exec SERVICE` instead. Existing bind-mount paths are retained.
+5. **Verify**
+   Check the startup logs:
+```bash
+docker compose logs -f
+```
+
+*(Press `Ctrl+C` to exit logs.)*
+
+## Configuration
+
+Edit deployment settings in `.env`; keep it when pulling repository updates. Image selections, ports, paths and supported application settings are listed in the environment example. `latest` is a rolling tag; choose a release tag or digest if you want a fixed version.
+
+| Variable | Description | Default | Recommendation |
+| --- | --- | --- | --- |
+| `APP_PORT` | Web interface port | `5173` | Set in `.env` for your host |
+| `BITMAPPERY_IMAGE` | Container image/tag | `ghcr.io/formless63/bitmappery:latest` | Set in `.env` for your host |
+
+[Update and advanced setup notes](../.resources/maintenance/bitmappery.md)

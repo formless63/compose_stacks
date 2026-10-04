@@ -26,6 +26,4 @@ uploads/
 extensions/
 assets/
 postgres/
-
-# Preserve existing stack-specific exclusions
-supersync/
+databases.json

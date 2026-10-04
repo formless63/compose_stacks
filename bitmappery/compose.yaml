@@ -1,5 +1,6 @@
 services:
   bitmappery:
+    container_name: ${CONTAINER_NAME:-bitmappery}
     image: ${BITMAPPERY_IMAGE:-ghcr.io/formless63/bitmappery:latest}
     restart: unless-stopped
     # Production static site served by unprivileged nginx on container port 5173.
@@ -8,5 +9,5 @@ services:
     logging:
       driver: json-file
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: "${LOG_MAX_SIZE:-10m}"
+        max-file: "${LOG_MAX_FILES:-3}"

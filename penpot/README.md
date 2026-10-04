@@ -1,50 +1,63 @@
 # Penpot
 
-A self-hosted design workspace with frontend, backend, exporter, admin console, MCP, PostgreSQL and Valkey.
+A self-hosted design and prototyping workspace.
 
-[Upstream documentation](https://help.penpot.app/technical-guide/getting-started/docker/) · [Validation results](../VALIDATION.md)
+**Links:**
+* [Upstream project](https://github.com/penpot/penpot)
+* [Container registry](https://hub.docker.com/u/penpotapp)
 
-## Start
+## Quick Start
 
-Clone this repository, then run commands from `penpot/`. Complete the configuration and storage preparation below before launching.
+1. **Get the Repository**
+   Clone the repository and navigate to the service directory:
+```bash
+git clone https://github.com/formless63/compose_stacks.git
+cd compose_stacks/penpot
+```
 
-```sh
+2. **Prepare Environment**
+   Copy the example configuration file:
+```bash
 cp .env.example .env
-# Edit .env; generate required secrets and configure URLs/storage.
-docker compose config --quiet
+```
+
+3. **Edit Configuration**
+   Open the configuration file:
+```bash
+nano .env
+```
+
+* Set `PENPOT_PUBLIC_URI` and SMTP settings.
+* Generate `PENPOT_SECRET_KEY` with `python3 -c "import secrets; print(secrets.token_urlsafe(64))"`.
+* Set `POSTGRES_PASSWORD`; the backend uses the same password unless you explicitly override it.
+* Set the storage paths. The assets folder must be writable by UID/GID 1001. With default paths: `mkdir -p ./penpot/assets && sudo chown 1001:1001 ./penpot/assets`.
+* **Save & Exit:** Press `Ctrl+X`, then `Y`, then `Enter`.
+
+4. **Launch**
+   Start the stack:
+```bash
 docker compose up -d
-docker compose logs --tail=100
 ```
 
-## Configuration and compatibility
-
-The three original application services plus admin-console and MCP follow upstream 2.18.1. All Penpot images share `PENPOT_VERSION`; upgrade them together. PostgreSQL stays on major version 15 and Valkey on 8.1.
-
-Set `PENPOT_PUBLIC_URI` to your public HTTPS URL. Generate `PENPOT_SECRET_KEY`:
-
-```sh
-python3 -c "import secrets; print(secrets.token_urlsafe(64))"
+5. **Verify**
+   Check the startup logs:
+```bash
+docker compose logs -f
 ```
 
-Set `POSTGRES_PASSWORD` and `PENPOT_DATABASE_PASSWORD` to the same strong value for a new deployment. For an existing database, use its current password: changing the Postgres environment variable does not change a database user's password.
+*(Press `Ctrl+C` to exit logs.)*
 
-Configure `PENPOT_SMTP_*` for your provider. Use TLS on port 587 or SSL on port 465 as appropriate. Flags enable SMTP, administrative access, telemetry, the admin console and MCP. Secure session cookies remain enabled, so use HTTPS. The exporter uses the public URL for users and `PENPOT_INTERNAL_URI` for container-to-container access.
+## Configuration
 
-The frontend is published on `PENPOT_HTTP_PORT` (9001 by default). Backend, exporter, admin console, MCP and databases remain on the project network. The proxy needs WebSockets and request body limits at least as large as the configured limits.
+Edit deployment settings in `.env`; keep it when pulling repository updates. Image selections, ports, paths and supported application settings are listed in the environment example. `latest` is a rolling tag; choose a release tag or digest if you want a fixed version.
 
-The tested Penpot image runs as UID/GID 1001. Prepare the shared assets bind directory before first launch. For the default path:
+| Variable | Description | Default | Recommendation |
+| --- | --- | --- | --- |
+| `PENPOT_HTTP_PORT` | Web interface port | `9001` | Set in `.env` for your host |
+| `PENPOT_PUBLIC_URI` | Public HTTPS URL | `Your Penpot domain` | Set in `.env` for your host |
+| `PENPOT_VERSION / POSTGRES_IMAGE / VALKEY_IMAGE` | Application / database / cache versions | `See .env.example` | Set in `.env` for your host |
+| `PENPOT_SECRET_KEY` | Session and invitation secret | `Generate a unique value` | Set in `.env` for your host |
+| `POSTGRES_PASSWORD` | Database password | `Set a strong password` | Set in `.env` for your host |
+| `DB_VOLUME / ASSETS_VOLUME` | Database / shared files | `./penpot/postgres / ./penpot/assets` | Set in `.env` for your host |
 
-```sh
-mkdir -p ./penpot/assets
-sudo chown 1001:1001 ./penpot/assets
-```
-
-Use your configured `ASSETS_VOLUME` if overridden; keep it writable by UID/GID 1001. All application services share this directory. The PostgreSQL container manages the database directory separately.
-
-Back up both `DB_VOLUME` and `ASSETS_VOLUME`. Read release migration notes before changing the pinned release. A PostgreSQL major upgrade needs a dump/restore or supported `pg_upgrade`, never just a replacement image tag.
-
-## Maintenance
-
-Back up persistent data before an upgrade. Choose a tested image tag or digest, consult upstream migration notes, then pull and recreate the stack. Keep the previous image reference and a restorable backup; database migrations can make a simple image rollback unsafe.
-
-Fixed container names have been removed so separate Compose projects can coexist. Scripts using old container names should use `docker compose exec SERVICE` instead. Existing bind-mount paths are retained.
+[Update and advanced setup notes](../.resources/maintenance/penpot.md)

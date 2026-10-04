@@ -205,6 +205,20 @@
           "local_adaptation": "Flattened upstream filesystem with restored runtime configuration to fit the cloud VFS storage driver; Compose health checks retained."
         }
       ]
+    },
+    {
+      "stack": "omada",
+      "result": "passed",
+      "images": [
+        {
+          "service": "omada",
+          "image": "local/compose-test:omada",
+          "id": "sha256:7d5b072dede10831c1923866282f82da8671fc497378b33e948638d7cc97a90e",
+          "digests": [],
+          "upstream_source": "mbentley/omada-controller@sha256:3b102f3b11450688c53f3ec65aead06726bce8b8b4a7b671564f7466de53f5b1",
+          "local_adaptation": "Flattened upstream filesystem with restored runtime configuration to fit the cloud VFS storage driver."
+        }
+      ]
     }
   ]
 }
